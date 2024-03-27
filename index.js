@@ -1,14 +1,14 @@
 // index.js
 const express = require('express');
 const dotenv = require('dotenv');
+
 const routes = require('./routes/main');
- const db = require('./config/database');
+require('./config/database');
 
 dotenv.config();
 const app = express();
-
 // Use routes
-app.use('/api', routes);
+app.use('/', routes);
 
 // Start the server
 const PORT = process.env.PORT || 3000;

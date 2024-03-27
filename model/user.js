@@ -1,7 +1,11 @@
 // models/exampleModel.js
-const db = require('../config/database');
+const db = require('../config/query');
 
-exports.fetchData = async () => {
-  const result = await db.query('SELECT * FROM test');
-  return result.rows;
-};
+module .exports={
+  fetchData : async () => {
+    console.log("inside model");
+    const result = await db.query('SELECT * FROM users');
+    console.log(result);
+    return result
+  }
+}
