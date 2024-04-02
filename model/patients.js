@@ -47,7 +47,7 @@ const Patient = sequelize.define('Patient', {
 // Sync the model with the database
 (async () => {
   try {
-    await Patient.sync({ force: true });
+    await Patient.sync({ alter: true });
     console.log('Patient table created!');
   } catch (error) {
     console.error('Error syncing patient table:', error);
