@@ -1,11 +1,12 @@
 var express = require('express');
 var router = express.Router();
 const isAuth=require('../middleware/isAuth')
-const {signup,login}=require('../controllers/usercontroller')
+const {signup,login,validateotp}=require('../controllers/usercontroller')
 /* GET home page. */
 
 router.post('/signup',signup)
 router.post('/login',login)
+router.post('/validateotp',validateotp)
 // router.post('/editUser',isAuth,updateUser)
 // router.get('/home',isAuth,home)
 // router.post('/deleteUser',isAuth,deleteUser)

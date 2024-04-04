@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
+const OTP=require('./otp')
 
 sequelize.options.logging = false;
 
@@ -38,13 +39,10 @@ const Users = sequelize.define('Users', {
     type: DataTypes.BOOLEAN,
     defaultValue: true
   },
-  otp: {
-    type: DataTypes.INTEGER // Column to store the OTP
-  },
   isEmailVerified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false // Column to indicate whether the email is verified
-  }
+  },
 });
 
 // Sync the model with the database

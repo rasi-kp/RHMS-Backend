@@ -2,7 +2,9 @@
 const bcrypt = require('bcrypt');
 
 // require('../model/patients')
+const OTP=require('../model/otp')
 const User=require('../model/user')
+const uhelper=require('../helpers/userhelpers')
 // require('../model/admin')
 // require('../model/doctor')
 // require('../model/AvailableToken')
@@ -19,31 +21,59 @@ module.exports={
       return res.status(400).json({ error: "Missing required fields" });
     }
     const otpExpiryTime = 5 * 60 * 1000; // 5 minutes in milliseconds
-    const generatedotp = await otp.generateOTP();
-    const otpExpiry = Date.now() + otpExpiryTime;
+    const generatedotp = await uhelper.generateOTP();
+    
+    const otpExpiry = new Date(Date.now() + otpExpiryTime);
     const userData = {
       email: req.body.email,
       name: req.body.name,
       password: req.body.password,
       subscription: false,
-      isActive: false
+      isActive: true,
     };
     try {
       // Check if the user already exists
-      const existingUser = await User.findOne({ where: { email: userData.email } });
+      const existingUser = await User.findOne({ where: { email: userData.email, isEmailVerified: true } });
       if (existingUser) {
         return res.status(400).json({ error: "Email already exists" });
       }
+      const existingUnverifiedUser = await User.findOne({ where: { email: userData.email,isEmailVerified: false } });
+      if (existingUnverifiedUser) {
+        // Email exists but is not verified, delete the existing user's data
+        await User.destroy({ where: { email: userData.email } });
+      }
+      await uhelper.sendOTPEmail(req.body.email, generatedotp);
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       userData.password = hashedPassword;
-      // Create a new user
       const newUser = await User.create(userData);
-      return res.status(200).json({ user: newUser.name });
+      await OTP.create({
+        otp: generatedotp,
+        expireTime: otpExpiry,
+        userId: newUser.user_id
+      });
+      return res.status(200).json({ userid: newUser.user_id });
     } catch (error) {
       console.error('Error creating user:', error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },
+  validateotp: async (req, res) => {
+    const otpRecord = await OTP.findOne({ where: { userId: req.body.id } });
+    if (!otpRecord) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+    if (req.body.otp !== otpRecord.otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+  
+    // Check if the OTP has expired
+    if (Date.now() > otpRecord.expireTime) {
+      return res.status(400).json({ error: "OTP has expired" });
+    }
+    await User.update({ isEmailVerified: true }, { where: { user_id: req.body.id } });
+    return res.status(200).json({ message: "OTP verified successfully" });
+   
+},
   login:async()=>{
     try {
       const { email, password } = req.body;
