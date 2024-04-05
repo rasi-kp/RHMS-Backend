@@ -32,7 +32,6 @@ module.exports={
       isActive: true,
     };
     try {
-      // Check if the user already exists
       const existingUser = await User.findOne({ where: { email: userData.email, isEmailVerified: true } });
       if (existingUser) {
         return res.status(400).json({ error: "Email already exists" });
