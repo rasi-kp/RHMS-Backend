@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 app.use('/', main);
 app.use('/patient', patient);
 app.use('/user', user);
-// app.use('/doctor', doctor);
+app.use('/doctor', doctor);
 // app.use('/admin', admin);
 
 // Start the server

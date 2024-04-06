@@ -27,7 +27,7 @@ const Doctor = sequelize.define('Doctor', {
     type: DataTypes.STRING
   },
   mob_no: {
-    type: DataTypes.INTEGER
+    type: DataTypes.STRING
   },
   qualification: {
     type: DataTypes.STRING

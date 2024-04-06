@@ -1,68 +1,47 @@
-// controllers/exampleController.js
-const ExampleModel = require('../model/user');
-const login=require('../model/users')
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken')
+const { Op } = require('sequelize');
 
-module.exports={
-  getExampleData : async (req, res) => {
+
+const Admin = require('../model/admin')
+const Doctor = require('../model/doctor')
+// require('../model/AvailableToken')
+// require('../model/appointment')
+
+
+
+module.exports = {
+
+  login: async (req, res) => {
     try {
-      // const insert=await ExampleModel.admin()
-      const data = await ExampleModel.fetchData();
-      // const data1 = await ExampleModel.createtableuser();
-      res.json(data);
+      const { email, password } = req.body;
+      const admin = await Admin.findOne({ where: { email: email } })
+      if (admin) {
+        const passwordMatch = await bcrypt.compare(password, admin.password);
+        if (!passwordMatch) {
+          return res.status(401).json({ error: "Invalid password" });
+        }
+        const token = jwt.sign({ AdminID: admin.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        return res.status(200).json({ token, Admin: { id: admin.id, email: admin.email, name:"Admin" } });
+      } 
+      const doctor = await Doctor.findOne({
+        where: { [Op.or]: [{ email: email }, { mob_no: email }] }
+      });
+      if (!doctor) {
+        return res.status(404).json({ error: "Invalied Email ID or Mobile No" });
+      }
+      if (!doctor.isActive) {
+        return res.status(403).json({ error: "Account is not active. Please contact the admin." });
+      }
+      const passwordMatch = await bcrypt.compare(password, doctor.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid password" });
+      }
+      const token = jwt.sign({ doctorId: doctor.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+      return res.status(200).json({ token, doctor: { id: doctor.id, email: doctor.email, name: doctor.name } });
     } catch (error) {
-      console.error(error);
-      console.log("error");
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  },
-  signup:async()=>{
-    const datas = {
-      email: req.body.email,
-      name: req.body.name,
-      password: req.body.password,
-      subscription: false,
-      isActive: true
-    }
-    const existuser = await login.signupc(datas.email)
-    if (/\s/.test(datas.username)) {
-      return res.status(400).json({ error: "Space not allowed" });
-    }
-    else if (existuser) {
-      return res.status(400).json({ error: "Email Already Exist" });
-    }
-    else {
-      // const saltRounds = 10;
-      // const hashpassword = await bcrypt.hash(req.body.password, saltRounds)
-      // datas.password = hashpassword
-      // const result = await collection.insertOne(datas)
-      const result = await login.insert(datas)
-      return res.status(200).json({ user: datas.name });
-    }
-  },
-  login:async()=>{
-    try {
-      const usercheck = await login.signupc(req.body.email)
-      if (!usercheck) {
-        return res.status(400).json({ error: "Invalid username" });
-      }
-      else {
-        const passwordmatch = await bcrypt.compare(req.body.password, usercheck.password)
-        if (passwordmatch) {
-          const token = jwt.sign({ id: usercheck.id }, 'rasi_secret_key', { expiresIn: '30d' });
-          if (usercheck.role == 'admin') {
-            return res.json({ token, success: "admin", user: "Admin" });
-          } else if (usercheck.status == "block") {
-            return res.status(400).json({ token, error: "Admin blocked" });
-          }
-          else
-            return res.json({ token, success: "success", user: usercheck.name });
-        }
-        else {
-          return res.status(400).json({ error: "Invalid password" });
-        }
-      }
-    } catch {
-      return res.status(500).json({ error: "Internal server error" });
+      console.error('Error logging in:', error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
   },
 }
