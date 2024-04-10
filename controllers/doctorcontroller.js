@@ -22,7 +22,7 @@ module.exports = {
           return res.status(401).json({ error: "Invalid password" });
         }
         const token = jwt.sign({ AdminID: admin.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        return res.status(200).json({ token, Admin: { id: admin.id, email: admin.email, name:"Admin" } });
+        return res.status(200).json({ token,role:"admin", user: { id: admin.id, email: admin.email, name:"Admin" } });
       } 
       const doctor = await Doctor.findOne({
         where: { [Op.or]: [{ email: email }, { mob_no: email }] }
@@ -38,7 +38,7 @@ module.exports = {
         return res.status(401).json({ error: "Invalid password" });
       }
       const token = jwt.sign({ doctorId: doctor.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-      return res.status(200).json({ token, doctor: { id: doctor.id, email: doctor.email, name: doctor.name } });
+      return res.status(200).json({ token,role:"doctor", user: { id: doctor.id, email: doctor.email, name: doctor.name } });
     } catch (error) {
       console.error('Error logging in:', error);
       return res.status(500).json({ error: "Internal Server Error" });
