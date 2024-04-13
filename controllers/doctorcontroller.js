@@ -27,6 +27,7 @@ module.exports = {
       const doctor = await Doctor.findOne({
         where: { [Op.or]: [{ email: email }, { mob_no: email }] }
       });
+      
       if (!doctor) {
         return res.status(404).json({ error: "Invalied Email ID or Mobile No" });
       }
@@ -38,7 +39,7 @@ module.exports = {
         return res.status(401).json({ error: "Invalid password" });
       }
       const token = jwt.sign({ doctorId: doctor.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-      return res.status(200).json({ token,role:"doctor", user: { id: doctor.id, email: doctor.email, name: doctor.name } });
+      return res.status(200).json({ token,role:"doctor", user: { id: doctor.doctor_id, email: doctor.email, name: doctor.first_name, last:doctor.last_name} });
     } catch (error) {
       console.error('Error logging in:', error);
       return res.status(500).json({ error: "Internal Server Error" });
