@@ -55,20 +55,23 @@ module.exports = {
   editpost: async (req, res) => {
     const userid = req.user.userId
     try {
-      const { fname, lname, dob, bg, age, weight, height, gender } = req.body;
+      const {patient_id, first_name, last_name, date_of_birth, blood_group, age, weight, height, gender } = req.body;
       const userData = {
         user_id: userid,
-        first_name: fname,
-        last_name: lname,
-        date_of_birth: dob,
-        blood_group: bg,
+        first_name: first_name,
+        last_name: last_name,
+        date_of_birth: date_of_birth,
+        blood_group: blood_group,
         age: age,
         weight: weight,
         height: height,
         gender: gender,
       };
-      const newUser = await Patient.create(userData);
-      return res.status(200).json({ message: "success", userid: newUser.user_id });
+      const newUser = await Patient.update(userData,{where: {
+        patient_id: patient_id,
+        user_id: userid
+    },});
+      return res.status(200).json({ message: "success", name: userData.first_name });
     } catch (error) {
       return res.status(500).json({ error: "Internal Server Error" });
     }

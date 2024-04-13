@@ -24,7 +24,7 @@ app.use('/', main);
 app.use('/patient', patient);
 app.use('/user', user);
 app.use('/doctor', doctor);
-// app.use('/admin', admin);
+app.use('/admin', admin);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
