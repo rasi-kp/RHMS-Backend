@@ -71,7 +71,7 @@ module.exports = {
     try {
       const existingdoctor = await Doctor.findOne({ where: { [Op.or]: [{ email: req.body.email }, { mob_no: req.body.mob_no }] } });
       if (existingdoctor) {
-        return res.status(200).json({ error: "Doctor already exist" });
+        return res.status(200).json({ message: "Doctor already exist" });
       }
       const { email, first_name, last_name, date_of_birth, gender, mob_no, qualification, department, specialization, address } = req.body;
       const mobileLastDigits = mob_no.slice(-5); // Use last 5 digits of mobile number
@@ -79,6 +79,7 @@ module.exports = {
       const data = {
         email: email,
         password: password,
+        image: req.file.filename,
         first_name: `Dr. ${first_name}`,
         last_name: last_name,
         date_of_birth: date_of_birth,
@@ -94,7 +95,7 @@ module.exports = {
       const hashedPassword = await bcrypt.hash(data.password, 10);
       data.password = hashedPassword;
       const newUser = await Doctor.create(data);
-      return res.status(200).json({ message: "success", doctorid: newUser.doctor_id });
+      return res.status(200).json({ success: "success", doctorid: newUser.doctor_id });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: "Internal Server Error" });

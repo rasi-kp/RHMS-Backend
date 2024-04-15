@@ -6,8 +6,8 @@ const jwt = require('jsonwebtoken')
 const OTP = require('../model/otp')
 const User = require('../model/user')
 const uhelper = require('../helpers/userhelpers')
+const Doctor=require('../model/doctor')
 // require('../model/admin')
-// require('../model/doctor')
 // require('../model/AvailableToken')
 // require('../model/appointment')
 
@@ -16,6 +16,13 @@ const uhelper = require('../helpers/userhelpers')
 module.exports = {
   getExampleData: async (req, res) => {
     res.send("hello")
+  },
+  doctors:async(req,res)=>{
+    const doctors = await Doctor.findAll({
+      attributes: ['first_name', 'last_name', 'specialization', 'department', 'image', 'qualification'],
+      order: [['createdAt', 'DESC']]
+  });
+    return res.status(200).json({ doctors:doctors });
   },
   signup: async (req, res) => {
     if (!req.body.email || !req.body.name || !req.body.password) {

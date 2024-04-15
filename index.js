@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 var logger = require('morgan');
 const bodyParser = require('body-parser');
 var cors =require('cors')
+const path = require('path'); // Import path module
 
 const main = require('./routes/main');
 const admin =require("./routes/admin")
@@ -19,6 +20,7 @@ app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+app.use(express.static(path.join(__dirname, 'public')));
 // Use routes
 app.use('/', main);
 app.use('/patient', patient);

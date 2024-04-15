@@ -21,7 +21,7 @@ module.exports = {
         if (!passwordMatch) {
           return res.status(401).json({ error: "Invalid password" });
         }
-        const token = jwt.sign({ AdminID: admin.admin_id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ AdminID: admin.admin_id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '30d' });
         return res.status(200).json({ token,role:"admin", user: { id: admin.id, email: admin.email, name:"Admin" } });
       } 
       const doctor = await Doctor.findOne({
