@@ -18,8 +18,11 @@ const AvailableToken = sequelize.define('AvailableToken', {
   token_no: {
     type: DataTypes.INTEGER
   },
-  datetime: {
-    type: DataTypes.DATE
+  date: {
+    type: DataTypes.DATEONLY // This column will store only the date without time
+  },
+  time: {
+    type: DataTypes.TIME // This column will store only the time without date
   },
   is_available: {
     type: DataTypes.BOOLEAN,

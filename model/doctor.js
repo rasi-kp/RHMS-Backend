@@ -11,6 +11,9 @@ const Doctor = sequelize.define('Doctor', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  image:{
+    type: DataTypes.STRING,
+  },
   first_name: {
     type: DataTypes.STRING,
     allowNull: false
