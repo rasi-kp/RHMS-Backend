@@ -40,6 +40,28 @@ module.exports = {
       totalPages: totalPages,
       data: paginatedPatients});
   },
+  alldoctor: async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const search = req.query.search;
+    const whereCondition = {};
+    if (search) {
+      whereCondition[Sequelize.Op.or] = {
+        first_name: { [Sequelize.Op.iLike]: `%${search}%` },
+      };
+    }
+    const doctors = await Doctor.findAll({ where: whereCondition, order: [['createdAt', 'DESC']] });
+    const totalPages = Math.ceil(doctors.length / 5);
+    const startIndex = (page - 1) * 5;
+    const endIndex = page * 5;
+
+    const paginatedDoctors = doctors.slice(startIndex, endIndex);
+    return res.status(200).json({
+      page: page,
+      limit: 5,
+      totalPages: totalPages,
+      data: paginatedDoctors
+    });
+  },
   deletep: async (req, res) => {
     const userid = req.user.userId
     const pid = req.params.id;

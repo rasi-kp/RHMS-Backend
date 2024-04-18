@@ -19,7 +19,7 @@ module.exports = {
   },
   doctors:async(req,res)=>{
     const doctors = await Doctor.findAll({
-      attributes: ['first_name', 'last_name', 'specialization', 'department', 'image', 'qualification'],
+      attributes: ['doctor_id','first_name', 'last_name', 'specialization', 'department', 'image', 'qualification'],
       order: [['createdAt', 'DESC']]
   });
     return res.status(200).json({ doctors:doctors });

@@ -48,42 +48,61 @@ module.exports = {
   addtoken: async (req, res) => {
     try {
       const doctorid = req.doctor.doctorId
-      console.log(req.body, doctorid);
       const { tokens, date } = req.body;
+      console.log(req.body);
       const { day, date: appointmentDate } = date;
 
-      console.log(day, appointmentDate);
-
-      // Iterate over the tokens array and create records in AvailableToken table
       for (let i = 0; i < tokens.length; i++) {
         const tokenInfo = tokens[i];
 
-        // Extract token name and time
-        const { name, time } = tokenInfo;
-        console.log(name, time, i + 1);
-        // Construct the datetime for the token
+        const { name , time } = tokenInfo;
+        if(!name){
+          continue
+        }
+        const tokenNumber = name
         // For simplicity, assuming appointmentDate is in 'DD-MM-YYYY' format
         const [day, month, year] = appointmentDate.split('-');
         const formattedDate = `${year}-${month}-${day}`;
-        const datetime = new Date(`${formattedDate} ${time}`);
 
-        // Create a record in the AvailableToken table
+        const existingToken = await AvailableToken.findOne({
+          where: {
+            token_no: tokenNumber,
+            doctor_id: doctorid,
+            date: formattedDate,
+          },
+        });
+        if (existingToken) {
+          // res.status(201).json({message:`Token already exists for doctor ${doctorid} on ${formattedDate} with token number ${tokenNumber}`})
+          continue;
+        }
         await AvailableToken.create({
           doctor_id: doctorid, // Assuming doctor_id is available in req.user
-          token_no: i + 1, // Assuming tokens are indexed from 1
+          token_no: tokenNumber, // Assuming tokens are indexed from 1
           date: formattedDate,
           time,
           is_available: true,
           status: 'available', // Set the initial status
-          created: new Date(), // Set the created timestamp
         });
       }
-
       res.status(201).json({ message: 'Tokens added successfully' });
     } catch (error) {
       console.error('Error adding tokens:', error);
       res.status(500).json({ error: 'Failed to add tokens' });
     }
+  },
+  addedtokens: async (req, res) => {
+    const doctorid = req.doctor.doctorId
+    const date = req.params.date
+    const [day, month, year] = date.split('-');
+    const formattedDate = `${year}-${month}-${day}`;
+    const Tokens = await AvailableToken.findAll({
+      attributes: ['token_no'],
+      where: {
+        doctor_id: doctorid,
+        date: formattedDate,
+      },
+    });
+    res.status(200).json({ tokens:Tokens });
   }
 }
 

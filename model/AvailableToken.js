@@ -30,9 +30,6 @@ const AvailableToken = sequelize.define('AvailableToken', {
   },
   status: {
     type: DataTypes.STRING
-  },
-  created: {
-    type: DataTypes.DATE
   }
 });
 
