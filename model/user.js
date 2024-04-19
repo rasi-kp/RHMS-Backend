@@ -45,6 +45,7 @@ const Users = sequelize.define('Users', {
   },
 });
 
+
 // Sync the model with the database
 (async () => {
   try {
