@@ -1,11 +1,22 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
+const Patient = require('./patients')
+const Token=require('./AvailableToken')
+const Doctor=require('./doctor')
 
 const Appointment = sequelize.define('Appointment', {
   appointment_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
+  },
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'user_id'
+    }
   },
   patient_id: {
     type: DataTypes.INTEGER,
@@ -31,14 +42,29 @@ const Appointment = sequelize.define('Appointment', {
       key: 'token_id'
     }
   },
-  appointment_datetime: {
-    type: DataTypes.DATE
+  date: {
+    type: DataTypes.DATEONLY // This column will store only the date without time
+  },
+  time: {
+    type: DataTypes.TIME // This column will store only the time without date
   },
   status: {
     type: DataTypes.STRING
   }
 });
-
+// Appointment belongs to Users
+Appointment.belongsTo(Patient, {
+  foreignKey: 'patient_id', // Foreign key in the Appointment model
+  as: 'patient' // Alias to refer to the Users model
+});
+Appointment.belongsTo(Token,{
+  foreignKey: "token_id",
+  as: "token"
+});
+Appointment.belongsTo(Doctor,{
+  foreignKey:"doctor_id",
+  as: "doctor"
+});
 // Sync the model with the database
 (async () => {
   try {
