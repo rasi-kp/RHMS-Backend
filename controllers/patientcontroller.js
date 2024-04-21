@@ -167,26 +167,126 @@ module.exports = {
   },
   appointments: async (req, res) => {
     const userid = req.user.userId;
+    const page = parseInt(req.query.page) || 1;
+    const search = req.query.search;
+
     const bookedAppointments = await Appointment.findAll({
+      attributes: ['appointment_id', 'date', 'time', 'status'],
       where: {
         user_id: userid,
         status: "scheduled"
       },
-      order: [['date', 'DESC']],
+      order: [['date', 'ASC']],
       include: [
         {
-            model: Patient,
-            as: 'patient',
-            attributes: ['first_name', 'last_name', 'age'],
+          model: Patient,
+          as: 'patient',
+          attributes: ['first_name', 'last_name', 'age'],
         },
         {
-            model: AvailableToken,
-            as: 'token',
-            attributes: ['token_no', 'status'],
+          model: AvailableToken,
+          as: 'token',
+          attributes: ['token_no', 'is_available', 'status'],
+        },
+        {
+          model: Doctor,
+          as: 'doctor',
+          attributes: ['first_name', 'last_name']
         }
-    ]
+      ]
     })
-    return res.status(200).json({ bookedAppointments });
+    const totalPages = Math.ceil(bookedAppointments.length / 5);
+    const startIndex = (page - 1) * 5;
+    const endIndex = page * 5;
+
+    const paginatedappointment = bookedAppointments.slice(startIndex, endIndex);
+    return res.status(200).json({
+      page: page,
+      limit: 5,
+      totalPages: totalPages,
+      appointment: paginatedappointment
+    });
+  },
+  cappointment: async (req, res) => {
+    const userid = req.user.userId;
+    const page = parseInt(req.query.page) || 1;
+    const search = req.query.search;
+
+    const bookedAppointments = await Appointment.findAll({
+      attributes: ['appointment_id', 'date', 'time', 'status'],
+      where: {
+        user_id: userid,
+        status: "completed"
+      },
+      order: [['date', 'ASC']],
+      include: [
+        {
+          model: Patient,
+          as: 'patient',
+          attributes: ['first_name', 'last_name', 'age'],
+        },
+        {
+          model: AvailableToken,
+          as: 'token',
+          attributes: ['token_no', 'is_available', 'status'],
+        },
+        {
+          model: Doctor,
+          as: 'doctor',
+          attributes: ['first_name', 'last_name']
+        }
+      ]
+    })
+    const totalPages = Math.ceil(bookedAppointments.length / 5);
+    const startIndex = (page - 1) * 5;
+    const endIndex = page * 5;
+
+    const paginatedappointment = bookedAppointments.slice(startIndex, endIndex);
+    return res.status(200).json({
+      page: page,
+      limit: 5,
+      totalPages: totalPages,
+      appointment: paginatedappointment
+    });
+  },
+  dappointment: async (req, res) => {
+    const id = req.params.id
+    const appointment = await Appointment.findByPk(id);
+    appointment.status = 'cancelled';
+    await appointment.save();
+    const token_id = await AvailableToken.findOne({ where: {token_id: appointment.token_id} });
+    token_id.is_available = true;
+    await token_id.save()
+    res.status(200).json({ message: 'Appointment canceled successfully' });
+  },
+  rappointment: async (req, res) => {
+    const userid = req.user.userId
+    const {appointmentid, selectedTokens, selectedDate, doctorid, patientid } = req.body;
+    const { name, time } = selectedTokens;
+    const [day, month, year] = selectedDate.date.split('-');
+    const formattedDate = `${year}-${month}-${day}`;
+
+    const appointment = await Appointment.findByPk(appointmentid);
+    appointment.status = 'rescheduled';
+    await appointment.save();
+    const oldtoken = await AvailableToken.findOne({ where: {token_id: appointment.token_id} });
+    oldtoken.is_available = true;
+    await oldtoken.save()
+
+    const token_id = await AvailableToken.findOne({ where: { doctor_id: doctorid, token_no: parseInt(name), date: formattedDate } })
+
+    await Appointment.create({
+      user_id: userid,
+      patient_id: patientid,
+      doctor_id: doctorid,
+      token_id: token_id.token_id,
+      date: formattedDate,
+      time: time,
+      status: 'scheduled' // Set the initial status of the appointment
+    });
+    await AvailableToken.update({ is_available: false, status: 'notavailable' },
+      { where: { token_id: token_id.token_id } });
+    return res.status(200).json({ message: "success" });
   },
 }
 
