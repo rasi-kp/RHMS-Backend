@@ -146,12 +146,17 @@ module.exports = {
   },
   addappointment: async (req, res) => {
     const userid = req.user.userId
-    const { selectedTokens, selectedDate, doctorid, patientid } = req.body;
+    const { selectedTokens, selectedDate, doctorid, patientid,appointmentid } = req.body;
     const { name, time } = selectedTokens;
     const [day, month, year] = selectedDate.date.split('-');
     const formattedDate = `${year}-${month}-${day}`;
+    if(appointmentid){
+    const appointment = await Appointment.findOne({ where: { appointment_id: appointmentid } });
+      await Appointment.update({status:'resheduled'},{where:{appointment_id:appointmentid}})
+      await AvailableToken.update({ is_available: true, status: 'available' },
+      { where: { token_id: appointment.token_id } });
+    }
     const token_id = await AvailableToken.findOne({ where: { doctor_id: doctorid, token_no: parseInt(name), date: formattedDate } })
-
     await Appointment.create({
       user_id: userid,
       patient_id: patientid,
@@ -159,7 +164,7 @@ module.exports = {
       token_id: token_id.token_id,
       date: formattedDate,
       time: time,
-      status: 'scheduled' // Set the initial status of the appointment
+      status: 'scheduled'
     });
     await AvailableToken.update({ is_available: false, status: 'notavailable' },
       { where: { token_id: token_id.token_id } });
@@ -174,14 +179,14 @@ module.exports = {
       attributes: ['appointment_id', 'date', 'time', 'status'],
       where: {
         user_id: userid,
-        status: ["scheduled","cancelled"]
+        status: ["scheduled","cancelled","resheduled"]
       },
       order: [['date', 'DESC']],
       include: [
         {
           model: Patient,
           as: 'patient',
-          attributes: ['first_name', 'last_name', 'age'],
+          attributes: ['patient_id','first_name', 'last_name', 'age'],
         },
         {
           model: AvailableToken,
@@ -191,7 +196,7 @@ module.exports = {
         {
           model: Doctor,
           as: 'doctor',
-          attributes: ['first_name', 'last_name']
+          attributes: ['doctor_id','first_name', 'last_name']
         }
       ]
     })
