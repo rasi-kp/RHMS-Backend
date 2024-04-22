@@ -174,9 +174,9 @@ module.exports = {
       attributes: ['appointment_id', 'date', 'time', 'status'],
       where: {
         user_id: userid,
-        status: "scheduled"
+        status: ["scheduled","cancelled"]
       },
-      order: [['date', 'ASC']],
+      order: [['date', 'DESC']],
       include: [
         {
           model: Patient,
