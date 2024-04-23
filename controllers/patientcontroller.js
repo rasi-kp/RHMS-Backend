@@ -8,6 +8,8 @@ const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment');
 const { token } = require('morgan');
 
+const { sendSMS } = require('../util/message');
+
 module.exports = {
 
   dashboard: async (req, res) => {
@@ -36,6 +38,7 @@ module.exports = {
     const endIndex = page * 5;
 
     const paginatedPatients = patients.slice(startIndex, endIndex);
+    await sendSMS(6238409990, "appointment success");
     return res.status(200).json({
       page: page,
       limit: 5,
@@ -46,7 +49,11 @@ module.exports = {
   alldoctor: async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const search = req.query.search;
+    const specialization = req.query.specialization;
     const whereCondition = {};
+    if (specialization) {
+      whereCondition.specialization = specialization;
+    }
     if (search) {
       whereCondition[Sequelize.Op.or] = {
         first_name: { [Sequelize.Op.iLike]: `%${search}%` },
@@ -146,12 +153,17 @@ module.exports = {
   },
   addappointment: async (req, res) => {
     const userid = req.user.userId
-    const { selectedTokens, selectedDate, doctorid, patientid } = req.body;
+    const { selectedTokens, selectedDate, doctorid, patientid, appointmentid } = req.body;
     const { name, time } = selectedTokens;
     const [day, month, year] = selectedDate.date.split('-');
     const formattedDate = `${year}-${month}-${day}`;
+    if (appointmentid) {
+      const appointment = await Appointment.findOne({ where: { appointment_id: appointmentid } });
+      await Appointment.update({ status: 'resheduled' }, { where: { appointment_id: appointmentid } })
+      await AvailableToken.update({ is_available: true, status: 'available' },
+        { where: { token_id: appointment.token_id } });
+    }
     const token_id = await AvailableToken.findOne({ where: { doctor_id: doctorid, token_no: parseInt(name), date: formattedDate } })
-
     await Appointment.create({
       user_id: userid,
       patient_id: patientid,
@@ -159,7 +171,7 @@ module.exports = {
       token_id: token_id.token_id,
       date: formattedDate,
       time: time,
-      status: 'scheduled' // Set the initial status of the appointment
+      status: 'scheduled'
     });
     await AvailableToken.update({ is_available: false, status: 'notavailable' },
       { where: { token_id: token_id.token_id } });
@@ -169,19 +181,31 @@ module.exports = {
     const userid = req.user.userId;
     const page = parseInt(req.query.page) || 1;
     const search = req.query.search;
+    const date = req.query.date;
+
+    const whereCondition = {
+      user_id: userid,
+      status: ['scheduled', 'cancelled']
+    };
+    if (date) {
+      whereCondition.date = date;
+    }
+    if (search) {
+      whereCondition[Sequelize.Op.and] = [
+        whereCondition[Sequelize.Op.and] || {},
+        Sequelize.literal(`"patient"."first_name" ILIKE '%${search}%' OR "patient"."last_name" ILIKE '%${search}%'`)
+      ];
+    }
 
     const bookedAppointments = await Appointment.findAll({
       attributes: ['appointment_id', 'date', 'time', 'status'],
-      where: {
-        user_id: userid,
-        status: "scheduled"
-      },
-      order: [['date', 'ASC']],
+      where: whereCondition,
+      order: [['date', 'DESC']],
       include: [
         {
           model: Patient,
           as: 'patient',
-          attributes: ['first_name', 'last_name', 'age'],
+          attributes: ['patient_id', 'first_name', 'gender', 'last_name', 'age'],
         },
         {
           model: AvailableToken,
@@ -191,7 +215,7 @@ module.exports = {
         {
           model: Doctor,
           as: 'doctor',
-          attributes: ['first_name', 'last_name']
+          attributes: ['doctor_id', 'first_name', 'last_name']
         }
       ]
     })
@@ -223,7 +247,7 @@ module.exports = {
         {
           model: Patient,
           as: 'patient',
-          attributes: ['first_name', 'last_name', 'age'],
+          attributes: ['first_name', 'gender', 'last_name', 'age'],
         },
         {
           model: AvailableToken,
@@ -254,14 +278,14 @@ module.exports = {
     const appointment = await Appointment.findByPk(id);
     appointment.status = 'cancelled';
     await appointment.save();
-    const token_id = await AvailableToken.findOne({ where: {token_id: appointment.token_id} });
+    const token_id = await AvailableToken.findOne({ where: { token_id: appointment.token_id } });
     token_id.is_available = true;
     await token_id.save()
     res.status(200).json({ message: 'Appointment canceled successfully' });
   },
   rappointment: async (req, res) => {
     const userid = req.user.userId
-    const {appointmentid, selectedTokens, selectedDate, doctorid, patientid } = req.body;
+    const { appointmentid, selectedTokens, selectedDate, doctorid, patientid } = req.body;
     const { name, time } = selectedTokens;
     const [day, month, year] = selectedDate.date.split('-');
     const formattedDate = `${year}-${month}-${day}`;
@@ -269,7 +293,7 @@ module.exports = {
     const appointment = await Appointment.findByPk(appointmentid);
     appointment.status = 'rescheduled';
     await appointment.save();
-    const oldtoken = await AvailableToken.findOne({ where: {token_id: appointment.token_id} });
+    const oldtoken = await AvailableToken.findOne({ where: { token_id: appointment.token_id } });
     oldtoken.is_available = true;
     await oldtoken.save()
 
