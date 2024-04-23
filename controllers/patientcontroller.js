@@ -8,6 +8,8 @@ const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment');
 const { token } = require('morgan');
 
+const { sendSMS } = require('../util/message');
+
 module.exports = {
 
   dashboard: async (req, res) => {
@@ -36,6 +38,7 @@ module.exports = {
     const endIndex = page * 5;
 
     const paginatedPatients = patients.slice(startIndex, endIndex);
+    await sendSMS(6238409990, "appointment success");
     return res.status(200).json({
       page: page,
       limit: 5,

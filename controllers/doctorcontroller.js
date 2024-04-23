@@ -2,10 +2,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
 const { Op } = require('sequelize');
 
-
+const User = require('../model/user')
 const Admin = require('../model/admin')
 const Doctor = require('../model/doctor')
-const Patient =require('../model/patients')
+const Patient = require('../model/patients')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment')
 
@@ -13,37 +13,42 @@ const Appointment = require('../model/appointment')
 
 module.exports = {
 
-  accept: async (req, res) =>{
+  accept: async (req, res) => {
     const doctorid = req.doctor.doctorId
-    const appointmentid=req.params.id
+    const appointmentid = req.params.id
     const detials = await Appointment.findOne({
       attributes: ['appointment_id'],
-      where: {appointment_id:appointmentid},
+      where: { appointment_id: appointmentid },
       include: [
         {
           model: Patient,
           as: 'patient',
-          attributes: ['patient_id', 'first_name', 'gender', 'last_name', 'age','blood_group','weight','height'],
+          attributes: ['patient_id', 'first_name', 'gender', 'last_name', 'age', 'blood_group', 'weight', 'height'],
         },
-        {
-          model: AvailableToken,
-          as: 'token',
-          attributes: ['token_no'],
-        },
+        // {
+        //   model: AvailableToken,
+        //   as: 'token',
+        //   attributes: ['token_no'],
+        // },
       ]
     })
+    res.status(200).json({ patient: detials, });
   },
-  absent: async (req, res) =>{
+  absent: async (req, res) => {
     const doctorid = req.doctor.doctorId
-    const appointmentid=req.params.id
+    const appointmentid = req.params.id
     const appointment = await Appointment.findOne({ where: { appointment_id: appointmentid } });
     await Appointment.update({ status: 'pending' }, { where: { appointment_id: appointmentid } })
-    await AvailableToken.update({status: 'absent' },
+    await AvailableToken.update({ status: 'absent' },
       { where: { token_id: appointment.token_id } });
+    res.status(200).json({ message: "success" })
   },
-  notify: async (req, res) =>{
+  notify: async (req, res) => {
     const doctorid = req.doctor.doctorId
-    const appoitmentid=req.params.id
+    const appointmentid = req.params.id
+    const appointment = await Appointment.findOne({ where: { appointment_id: appointmentid } });
+    const user = await User.findOne({ where: { user_id: appointment.user_id } });
+    res.status(200).json({ message: "success" })
   },
 
   login: async (req, res) => {
@@ -88,8 +93,8 @@ module.exports = {
       for (let i = 0; i < tokens.length; i++) {
         const tokenInfo = tokens[i];
 
-        const { name , time } = tokenInfo;
-        if(!name){
+        const { name, time } = tokenInfo;
+        if (!name) {
           continue
         }
         const tokenNumber = name
@@ -134,7 +139,7 @@ module.exports = {
         date: formattedDate,
       },
     });
-    res.status(200).json({ tokens:Tokens });
+    res.status(200).json({ tokens: Tokens });
   },
   appointments: async (req, res) => {
     const doctorid = req.doctor.doctorId;
@@ -162,7 +167,7 @@ module.exports = {
       order: [
         ['date', 'DESC'], // Order by date in descending order
         ['token', 'token_no', 'ASC'] // Then order by token_no in the AvailableToken model in ascending order
-    ],
+      ],
       include: [
         {
           model: Patient,
