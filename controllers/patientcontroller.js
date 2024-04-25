@@ -25,7 +25,8 @@ module.exports = {
     const page = parseInt(req.query.page) || 1;
     const search = req.query.search;
     const whereCondition = {
-      user_id: userid
+      user_id: userid,
+      status:'Active'
     };
     if (search) {
       whereCondition[Sequelize.Op.or] = {
@@ -38,7 +39,7 @@ module.exports = {
     const endIndex = page * 5;
 
     const paginatedPatients = patients.slice(startIndex, endIndex);
-    await sendSMS(6238409990, "appointment success");
+    // await sendSMS(6238409990, "appointment success");
     return res.status(200).json({
       page: page,
       limit: 5,
@@ -78,7 +79,7 @@ module.exports = {
   deletep: async (req, res) => {
     const userid = req.user.userId
     const pid = req.params.id;
-    const patients = await Patient.destroy({ where: { user_id: userid, patient_id: pid } });
+    await Patient.update({ status: 'deleted' },{ where: { user_id: userid, patient_id: pid } });
     return res.status(200).json({ success: "Successfully deleted" });
   },
   editp: async (req, res) => {
@@ -120,17 +121,19 @@ module.exports = {
       const userData = {
         user_id: userid,
         first_name: fname,
-        last_name: lname,
+        last_name: lname || null,
         date_of_birth: dob,
         blood_group: bg,
         age: age,
-        weight: weight,
-        height: height,
+        weight: weight || null,
+        height: height || null,
         gender: gender,
+        status: 'Active',
       };
       const newUser = await Patient.create(userData);
       return res.status(200).json({ message: "success", userid: newUser.user_id });
     } catch (error) {
+      console.log(error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },

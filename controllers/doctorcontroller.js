@@ -8,11 +8,11 @@ const Doctor = require('../model/doctor')
 const Patient = require('../model/patients')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment')
+const Prescription = require('../model/prescription')
 
 
 
 module.exports = {
-
   accept: async (req, res) => {
     const doctorid = req.doctor.doctorId
     const appointmentid = req.params.id
@@ -25,14 +25,41 @@ module.exports = {
           as: 'patient',
           attributes: ['patient_id', 'first_name', 'gender', 'last_name', 'age', 'blood_group', 'weight', 'height'],
         },
-        // {
-        //   model: AvailableToken,
-        //   as: 'token',
-        //   attributes: ['token_no'],
-        // },
-      ]
+      ],
     })
-    res.status(200).json({ patient: detials, });
+    const prescription = await Prescription.findAll({
+      attributes: ['prescription_id', 'observation', 'tablets', 'test','createdAt'],
+      where: { patient_id: detials.patient.patient_id, doctor_id: doctorid },
+      order: [['createdAt', 'DESC']],
+    })
+    res.status(200).json({ detials, prescription });
+  },
+  addprescription: async (req, res) => {
+    try {
+      const doctorid = req.doctor.doctorId
+      const { appointmentid, patientid, observation, tablets, test } = req.body;
+
+      const appointment = await Appointment.findOne({ where: { appointment_id: appointmentid } });
+      if (!appointment) {
+        return res.status(404).json({ error: 'Appointment not found' });
+      }
+      const newPrescription = await Prescription.create({
+        patient_id: patientid,
+        appointment_id: appointmentid,
+        doctor_id: doctorid,
+        observation,
+        tablets,
+        test,
+      });
+      await Appointment.update({ status: 'completed' }, { where: { appointment_id: appointmentid } })
+      res.status(201).json({
+        message: 'Prescription added successfully',
+        prescription: newPrescription,
+      });
+    } catch (error) {
+      console.error('Error adding prescription:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   },
   absent: async (req, res) => {
     const doctorid = req.doctor.doctorId
@@ -78,7 +105,7 @@ module.exports = {
         return res.status(401).json({ error: "Invalid password" });
       }
       const token = jwt.sign({ doctorId: doctor.doctor_id }, process.env.DOCTOR_JWT_SECRET, { expiresIn: '30d' });
-      return res.status(200).json({ token, role: "doctor", user: { id: doctor.doctor_id, email: doctor.email, name: doctor.first_name, last: doctor.last_name } });
+      return res.status(200).json({ token, role: "doctor", user: { id: doctor.doctor_id, email: doctor.email, name: doctor.first_name, last: doctor.last_name ,img:doctor.image} });
     } catch (error) {
       console.error('Error logging in:', error);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -149,7 +176,7 @@ module.exports = {
 
     const whereCondition = {
       doctor_id: doctorid,
-      status: ['scheduled']
+      status: ['scheduled','pending']
     };
     if (date) {
       whereCondition.date = date;
