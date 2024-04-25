@@ -105,7 +105,7 @@ module.exports = {
         return res.status(401).json({ error: "Invalid password" });
       }
       const token = jwt.sign({ doctorId: doctor.doctor_id }, process.env.DOCTOR_JWT_SECRET, { expiresIn: '30d' });
-      return res.status(200).json({ token, role: "doctor", user: { id: doctor.doctor_id, email: doctor.email, name: doctor.first_name, last: doctor.last_name } });
+      return res.status(200).json({ token, role: "doctor", user: { id: doctor.doctor_id, email: doctor.email, name: doctor.first_name, last: doctor.last_name ,img:doctor.image} });
     } catch (error) {
       console.error('Error logging in:', error);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -176,7 +176,7 @@ module.exports = {
 
     const whereCondition = {
       doctor_id: doctorid,
-      status: ['scheduled']
+      status: ['scheduled','pending']
     };
     if (date) {
       whereCondition.date = date;

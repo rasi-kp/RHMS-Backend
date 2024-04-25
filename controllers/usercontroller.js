@@ -1,16 +1,11 @@
-// controllers/exampleController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
 
-// require('../model/patients')
 const OTP = require('../model/otp')
 const User = require('../model/user')
 const uhelper = require('../helpers/userhelpers')
 const Doctor=require('../model/doctor')
-// require('../model/admin')
-// require('../model/AvailableToken')
-// require('../model/appointment')
-
+const AvailableToken= require('../model/AvailableToken')
 
 
 module.exports = {
@@ -23,6 +18,22 @@ module.exports = {
       order: [['createdAt', 'DESC']]
   });
     return res.status(200).json({ doctors:doctors });
+  },
+  viewtoken:async(req,res)=>{
+    const doctorid = req.query.doctorid
+    const date = req.query.date;
+
+    const [day, month, year] = date.split('-');
+    const formattedDate = `${year}-${month}-${day}`;
+    const Tokens = await AvailableToken.findAll({
+      attributes: ['token_no'],
+      where: {
+        doctor_id: doctorid,
+        date: formattedDate,
+        is_available: true
+      },
+    });
+    res.status(200).json({ tokens: Tokens });
   },
   signup: async (req, res) => {
     if (!req.body.email || !req.body.name || !req.body.password) {

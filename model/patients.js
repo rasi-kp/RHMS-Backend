@@ -21,7 +21,6 @@ const Patient = sequelize.define('Patient', {
   },
   last_name: {
     type: DataTypes.STRING,
-    allowNull: false
   },
   date_of_birth: {
     type: DataTypes.DATEONLY,
@@ -40,6 +39,9 @@ const Patient = sequelize.define('Patient', {
     type: DataTypes.INTEGER
   },
   gender: {
+    type: DataTypes.STRING
+  },
+  status: {
     type: DataTypes.STRING
   }
 });
