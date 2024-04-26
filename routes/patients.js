@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const isAuth=require('../middleware/isAuth')
 const {dashboard,allp,addp,deletep,editp,editpost,addappointment,
-    alldoctor,alltoken,appointments,cappointment,dappointment,rappointment,} = require('../controllers/patientcontroller');
+    alldoctor,alltoken,appointments,cappointment,dappointment,rappointment,
+    viewmonitor,} = require('../controllers/patientcontroller');
 const Appointment = require('../model/appointment');
 
 router.get('/dashboard',isAuth,dashboard)
@@ -19,7 +20,7 @@ router.get('/appointments',isAuth,appointments)
 router.get('/completeappointment',isAuth,cappointment)
 router.get('/deleteappointment/:id',isAuth,dappointment)
 router.get('/rescheduleappointment',isAuth,rappointment)
-// router.post('/updateProfile',isAuth,updateProfile)
+router.get('/viewmonitor',isAuth,viewmonitor)
 // router.post('/message',isAuth,message)
 // router.get('/message',isAuth,message_get)
 

@@ -21,12 +21,13 @@ module.exports = {
     }
   },
   allp: async (req, res) => {
+    sendSMS()
     const userid = req.user.userId
     const page = parseInt(req.query.page) || 1;
     const search = req.query.search;
     const whereCondition = {
       user_id: userid,
-      status:'Active'
+      status: 'Active'
     };
     if (search) {
       whereCondition[Sequelize.Op.or] = {
@@ -79,7 +80,7 @@ module.exports = {
   deletep: async (req, res) => {
     const userid = req.user.userId
     const pid = req.params.id;
-    await Patient.update({ status: 'deleted' },{ where: { user_id: userid, patient_id: pid } });
+    await Patient.update({ status: 'deleted' }, { where: { user_id: userid, patient_id: pid } });
     return res.status(200).json({ success: "Successfully deleted" });
   },
   editp: async (req, res) => {
@@ -137,15 +138,31 @@ module.exports = {
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },
+  viewmonitor: async (req, res) => {
+    const doctorid = req.query.doctorid
+    const date = req.query.date;
+    var formattedDate = date
+    const doctor =await Doctor.findOne({
+      attributes:['image','doctor_id','first_name','last_name','gender','qualification','specialization','email'],
+      where:{doctor_id : doctorid}})
+    const Tokens = await AvailableToken.findAll({
+      attributes: ['token_no', 'status','time'],
+      where: {
+        doctor_id: doctorid,
+        date: formattedDate,
+      },
+      order: [['token_no', 'ASC']],
+    });
+    res.status(200).json({ tokens: Tokens ,doctor});
+  },
   alltoken: async (req, res) => {
     const userid = req.user.userId
     const doctorid = req.query.doctorid
     const date = req.query.date;
-
     const [day, month, year] = date.split('-');
     const formattedDate = `${year}-${month}-${day}`;
     const Tokens = await AvailableToken.findAll({
-      attributes: ['token_no'],
+      attributes: ['token_no', 'status'],
       where: {
         doctor_id: doctorid,
         date: formattedDate,
@@ -166,7 +183,10 @@ module.exports = {
       await AvailableToken.update({ is_available: true, status: 'available' },
         { where: { token_id: appointment.token_id } });
     }
-    const token_id = await AvailableToken.findOne({ where: { doctor_id: doctorid, token_no: parseInt(name), date: formattedDate } })
+    const token_id = await AvailableToken.findOne({ where: { doctor_id: doctorid, token_no: parseInt(name), date: formattedDate, is_available: true } })
+    if (!token_id) {
+      return res.status(400).json({ error: "No Token Available" })
+    }
     await Appointment.create({
       user_id: userid,
       patient_id: patientid,
@@ -176,7 +196,7 @@ module.exports = {
       time: time,
       status: 'scheduled'
     });
-    await AvailableToken.update({ is_available: false, status: 'notavailable' },
+    await AvailableToken.update({ is_available: false, status: 'booked' },
       { where: { token_id: token_id.token_id } });
     return res.status(200).json({ message: "success" });
   },
