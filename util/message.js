@@ -1,41 +1,33 @@
+const Doctor = require('../model/doctor')
+const Patient = require("../model/patients")
+const User = require('../model/user')
 
-// const Nexmo = require('nexmo');
-
-// const nexmo = new Nexmo({
-//     apiKey: '276b8329',
-//     apiSecret: 'lI3LBR8lmgzcEMrz'
-// });
-
-
-// async function sendSMS (toPhoneNumber, message) {
-//     nexmo.message.sendSms('9605942261', toPhoneNumber, message, (err, responseData) => {
-//         if (err) {
-//             console.error('Error sending SMS:', err);
-//         } else {
-//             console.log('SMS sent successfully:', responseData);
-//         }
-//     });
-// };
-
-// module.exports = {
-//     sendSMS,
-// };
-const { Vonage } = require('@vonage/server-sdk')
-
-const vonage = new Vonage({
-  apiKey: "276b8329",
-  apiSecret: "lI3LBR8lmgzcEMrz"
-})
-const from = "Vonage APIs"
-const to = "919605942261"
-const text = 'Booking Successfully '
-
-async function sendSMS() {
-    await vonage.sms.send({to, from, text})
-        .then(resp => { console.log('Message sent successfully'); console.log(resp); })
-        .catch(err => { console.log('There was an error sending the messages.'); console.error(err); });
+const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+const sendSMS = async (userid,doctorid,patientid,token,date) => {
+  try {
+    const user = await User.findOne({
+      attributes: ['phone_no'],
+      where: { user_id: userid }
+    })
+    const doctor = await Doctor.findOne({
+      attributes: ['first_name','last_name'],
+      where: { doctor_id: doctorid }
+    })
+    const patient = await Patient.findOne({
+      attributes: ['first_name','last_name'],
+      where: { patient_id: patientid }
+    })
+    const messageText = `Appointment success! Token No: ${token.name}, Date: ${date}, Time: ${token.time}. Doctor: ${doctor.first_name} ${doctor.last_name}, Patient: ${patient.first_name} ${patient.last_name}.`;
+    const message = await client.messages.create({
+        from: '+12562738517', 
+        to: user.phone_no, 
+        body: messageText, 
+    });
+} catch (error) {
+    console.error('Error sending SMS:', error);
+}
 }
 
 module.exports = {
-    sendSMS,
+  sendSMS,
 };

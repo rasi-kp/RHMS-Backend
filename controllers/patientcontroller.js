@@ -21,7 +21,6 @@ module.exports = {
     }
   },
   allp: async (req, res) => {
-    sendSMS()
     const userid = req.user.userId
     const page = parseInt(req.query.page) || 1;
     const search = req.query.search;
@@ -142,18 +141,19 @@ module.exports = {
     const doctorid = req.query.doctorid
     const date = req.query.date;
     var formattedDate = date
-    const doctor =await Doctor.findOne({
-      attributes:['image','doctor_id','first_name','last_name','gender','qualification','specialization','email'],
-      where:{doctor_id : doctorid}})
+    const doctor = await Doctor.findOne({
+      attributes: ['image', 'doctor_id', 'first_name', 'last_name', 'gender', 'qualification', 'specialization', 'email'],
+      where: { doctor_id: doctorid }
+    })
     const Tokens = await AvailableToken.findAll({
-      attributes: ['token_no', 'status','time'],
+      attributes: ['token_no', 'status', 'time'],
       where: {
         doctor_id: doctorid,
         date: formattedDate,
       },
       order: [['token_no', 'ASC']],
     });
-    res.status(200).json({ tokens: Tokens ,doctor});
+    res.status(200).json({ tokens: Tokens, doctor });
   },
   alltoken: async (req, res) => {
     const userid = req.user.userId
@@ -198,6 +198,8 @@ module.exports = {
     });
     await AvailableToken.update({ is_available: false, status: 'booked' },
       { where: { token_id: token_id.token_id } });
+
+    sendSMS(userid, doctorid, patientid, selectedTokens, selectedDate);
     return res.status(200).json({ message: "success" });
   },
   appointments: async (req, res) => {

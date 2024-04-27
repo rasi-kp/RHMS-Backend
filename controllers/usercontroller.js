@@ -36,7 +36,7 @@ module.exports = {
     res.status(200).json({ tokens: Tokens });
   },
   signup: async (req, res) => {
-    if (!req.body.email || !req.body.name || !req.body.password) {
+    if (!req.body.email || !req.body.name || !req.body.password || !req.body.phone) {
       return res.status(400).json({ error: "Missing required fields" });
     }
     const otpExpiryTime = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -46,6 +46,7 @@ module.exports = {
       email: req.body.email,
       name: req.body.name,
       password: req.body.password,
+      phone_no:req.body.phone,
       subscription: false,
       isActive: true,
     };
