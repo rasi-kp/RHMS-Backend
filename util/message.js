@@ -5,6 +5,7 @@ const User = require('../model/user')
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
 const sendSMS = async (userid,doctorid,patientid,token,date) => {
   try {
+    console.log(date);
     const user = await User.findOne({
       attributes: ['phone_no'],
       where: { user_id: userid }
@@ -17,10 +18,10 @@ const sendSMS = async (userid,doctorid,patientid,token,date) => {
       attributes: ['first_name','last_name'],
       where: { patient_id: patientid }
     })
-    const messageText = `Appointment success! Token No: ${token.name}, Date: ${date}, Time: ${token.time}. Doctor: ${doctor.first_name} ${doctor.last_name}, Patient: ${patient.first_name} ${patient.last_name}.`;
+    const messageText = `Your Appointment is success! Token No: ${token.name}, Date: ${date.day} on ${date.date}, Time: ${token.time}. Doctor: ${doctor.first_name} ${doctor.last_name}, Patient name: ${patient.first_name} ${patient.last_name}.`;
     const message = await client.messages.create({
         from: '+12562738517', 
-        to: user.phone_no, 
+        to:`$(+91)${user.phone_no}`,
         body: messageText, 
     });
 } catch (error) {

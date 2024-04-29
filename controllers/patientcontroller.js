@@ -4,6 +4,7 @@ const Sequelize = require('sequelize');
 const Doctor = require('../model/doctor')
 const Patient = require("../model/patients")
 const User = require('../model/user')
+const Prescription = require('../model/prescription')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment');
 const { token } = require('morgan');
@@ -20,6 +21,38 @@ module.exports = {
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },
+  prescription: async (req, res) => {
+    const appointmentid = req.params.id;
+    console.log(appointmentid);
+    
+    try {
+      const prescription = await Prescription.findOne({
+        where: { appointment_id: appointmentid },
+        include: [
+            {
+                model: Patient,
+                as: 'patient',
+                attributes: ['patient_id', 'first_name', 'gender', 'last_name', 'age'],
+            },
+            {
+                model: Doctor,
+                as: 'doctordetails',
+                attributes: ['doctor_id','image', 'first_name', 'last_name','specialization','qualification'],
+            }
+        ]
+    });
+
+        if (!prescription) {
+            return res.status(404).json({ error: 'Prescription not found' });
+        }
+        return res.status(200).json({ prescription });
+
+    } catch (error) {
+        console.error('Error fetching prescription:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+},
+
   allp: async (req, res) => {
     const userid = req.user.userId
     const page = parseInt(req.query.page) || 1;
@@ -118,11 +151,13 @@ module.exports = {
     const userid = req.user.userId
     try {
       const { fname, lname, dob, bg, age, weight, height, gender } = req.body;
+      const [day, month, year] = dob.split('/');
+      const dob1 = `${year}-${month}-${day}`;
       const userData = {
         user_id: userid,
         first_name: fname,
         last_name: lname || null,
-        date_of_birth: dob,
+        date_of_birth: dob1,
         blood_group: bg,
         age: age,
         weight: weight || null,
@@ -130,6 +165,7 @@ module.exports = {
         gender: gender,
         status: 'Active',
       };
+
       const newUser = await Patient.create(userData);
       return res.status(200).json({ message: "success", userid: newUser.user_id });
     } catch (error) {

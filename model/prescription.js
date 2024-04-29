@@ -48,14 +48,15 @@ Prescription.belongsTo(Patient, {
     foreignKey: 'patient_id',
     as: 'patient' 
 });
+Prescription.belongsTo(Doctor, {
+    foreignKey: "doctor_id",
+    as: "doctordetails"
+});
 Prescription.belongsTo(Appointment, {
     foreignKey: "appointment_id",
     as: "appointment"
 });
-Appointment.belongsTo(Doctor, {
-    foreignKey: "doctor_id",
-    as: "prescribeddoctor"
-});
+
 (async () => {
     try {
         await Prescription.sync({ alter: true });
