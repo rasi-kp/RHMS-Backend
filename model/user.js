@@ -25,6 +25,9 @@ const Users = sequelize.define('Users', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  phone_no: {
+    type: DataTypes.STRING,
+  },
   subscription: {
     type: DataTypes.BOOLEAN,
     defaultValue: false

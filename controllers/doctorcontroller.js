@@ -17,7 +17,7 @@ module.exports = {
     const doctorid = req.doctor.doctorId
     const appointmentid = req.params.id
     const detials = await Appointment.findOne({
-      attributes: ['appointment_id'],
+      attributes: ['appointment_id','token_id'],
       where: { appointment_id: appointmentid },
       include: [
         {
@@ -27,6 +27,7 @@ module.exports = {
         },
       ],
     })
+    await AvailableToken.update({ status: 'checking' },{ where: { token_id: detials.token_id } });
     const prescription = await Prescription.findAll({
       attributes: ['prescription_id', 'observation', 'tablets', 'test','createdAt'],
       where: { patient_id: detials.patient.patient_id, doctor_id: doctorid },
@@ -52,6 +53,7 @@ module.exports = {
         test,
       });
       await Appointment.update({ status: 'completed' }, { where: { appointment_id: appointmentid } })
+      await AvailableToken.update({ status: 'completed' },{ where: { token_id: appointment.token_id } });
       res.status(201).json({
         message: 'Prescription added successfully',
         prescription: newPrescription,
