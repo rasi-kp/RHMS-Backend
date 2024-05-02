@@ -15,43 +15,94 @@ module.exports = {
 
   dashboard: async (req, res) => {
     try {
-
+      const userid = req.user.userId
+      const subscription = await User.findOne({attributes:['subscription'], where :{ user_id : userid,}})
+      const totalMembers = await Patient.count({where:{user_id:userid,status:"Active"}});
+      const upcomingAppointments = await Appointment.findAll({
+        attributes: ['appointment_id', 'date', 'time', 'status'],
+        where: {user_id: userid, status: ['scheduled']},
+        order: [['date', 'DESC']],
+        include: [
+          {
+            model: Patient,
+            as: 'patient',
+            attributes: ['first_name', 'last_name','gender'],
+          },
+          {
+            model: Doctor,
+            as: 'doctor',
+            attributes: ['first_name', 'last_name']
+          }
+        ]
+      })
+      const appointmentcount = await Appointment.count({where:{user_id:userid,status:['scheduled','completed']}});
+      return res.status(200).json({upcomingAppointments,subscription,totalMembers,appointmentcount});
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.log(error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },
+  profile :async(req,res)=>{
+    const userid = req.user.userId
+    const data=await User.findOne({where:{user_id:userid}})
+    return res.status(200).json({data})
+  },
+  profileadd :async(req,res)=>{
+    const userId = req.user.userId;
+        const user = await User.findOne({ where: { user_id: userId } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        if (req.file) {
+            user.image = req.file.filename;
+        }
+        if (req.body.first_name) {
+            user.first_name = req.body.first_name;
+        }
+        if (req.body.last_name) {
+            user.last_name = req.body.last_name;
+        }
+        if (req.body.dob) {
+            user.date_of_birth = req.body.dob;
+        }
+        if (req.body.gender) {
+            user.gender = req.body.gender;
+        }
+        if (req.body.blood_group) {
+            user.blood_group = req.body.blood_group;
+        }
+        await user.save();
+        return res.status(200).json({success:"success", user });
+  },
   prescription: async (req, res) => {
     const appointmentid = req.params.id;
-    console.log(appointmentid);
-    
     try {
       const prescription = await Prescription.findOne({
         where: { appointment_id: appointmentid },
         include: [
-            {
-                model: Patient,
-                as: 'patient',
-                attributes: ['patient_id', 'first_name', 'gender', 'last_name', 'age'],
-            },
-            {
-                model: Doctor,
-                as: 'doctordetails',
-                attributes: ['doctor_id','image', 'first_name', 'last_name','specialization','qualification'],
-            }
+          {
+            model: Patient,
+            as: 'patient',
+            attributes: ['patient_id', 'first_name', 'gender', 'last_name', 'age'],
+          },
+          {
+            model: Doctor,
+            as: 'doctordetails',
+            attributes: ['doctor_id', 'image', 'first_name', 'last_name', 'specialization', 'qualification'],
+          }
         ]
-    });
+      });
 
-        if (!prescription) {
-            return res.status(404).json({ error: 'Prescription not found' });
-        }
-        return res.status(200).json({ prescription });
+      if (!prescription) {
+        return res.status(404).json({ error: 'Prescription not found' });
+      }
+      return res.status(200).json({ prescription });
 
     } catch (error) {
-        console.error('Error fetching prescription:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+      console.error('Error fetching prescription:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
-},
+  },
 
   allp: async (req, res) => {
     const userid = req.user.userId
@@ -72,7 +123,6 @@ module.exports = {
     const endIndex = page * 5;
 
     const paginatedPatients = patients.slice(startIndex, endIndex);
-    // await sendSMS(6238409990, "appointment success");
     return res.status(200).json({
       page: page,
       limit: 5,
@@ -296,14 +346,25 @@ module.exports = {
     const userid = req.user.userId;
     const page = parseInt(req.query.page) || 1;
     const search = req.query.search;
+    const date = req.query.date;
 
+    const whereCondition = {
+      user_id: userid,
+      status: ['completed']
+    };
+    if (date) {
+      whereCondition.date = date;
+    }
+    if (search) {
+      whereCondition[Sequelize.Op.and] = [
+        whereCondition[Sequelize.Op.and] || {},
+        Sequelize.literal(`"patient"."first_name" ILIKE '%${search}%' OR "patient"."last_name" ILIKE '%${search}%'`)
+      ];
+    }
     const bookedAppointments = await Appointment.findAll({
       attributes: ['appointment_id', 'date', 'time', 'status'],
-      where: {
-        user_id: userid,
-        status: "completed"
-      },
-      order: [['date', 'ASC']],
+      where:whereCondition,
+      order: [['date', 'DESC']],
       include: [
         {
           model: Patient,

@@ -14,6 +14,9 @@ const Users = sequelize.define('Users', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  last_name: {
+    type: DataTypes.STRING,
+  },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -46,6 +49,22 @@ const Users = sequelize.define('Users', {
     type: DataTypes.BOOLEAN,
     defaultValue: false // Column to indicate whether the email is verified
   },
+  address: {
+    type: DataTypes.STRING,
+  },
+  blood_group: {
+    type: DataTypes.STRING,
+  },
+  gender: {
+    type: DataTypes.STRING,
+  },
+  date_of_birth: {
+    type: DataTypes.STRING,
+  },
+  image: {
+    type: DataTypes.STRING,
+  },
+  
 });
 
 

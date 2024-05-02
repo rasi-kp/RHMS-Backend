@@ -1,12 +1,16 @@
 // routes/exampleRoutes.js
 const express = require('express');
 const router = express.Router();
+const file=require('../config/multeruser')
 const isAuth=require('../middleware/isAuth')
 const {dashboard,allp,addp,deletep,editp,editpost,addappointment,
     alldoctor,alltoken,appointments,cappointment,dappointment,rappointment,
-    viewmonitor,prescription,} = require('../controllers/patientcontroller');
+    viewmonitor,prescription,profile,
+    profileadd,} = require('../controllers/patientcontroller');
 
 router.get('/dashboard',isAuth,dashboard)
+router.get('/profile',isAuth,profile)
+router.post('/profile',isAuth,file.single('image'),profileadd)
 router.get('/all',isAuth,allp)
 router.post('/add',isAuth,addp)
 router.get('/delete/:id',isAuth,deletep)
