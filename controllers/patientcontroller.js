@@ -7,16 +7,49 @@ const User = require('../model/user')
 const Prescription = require('../model/prescription')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment');
+const Chat=require('../model/chats')
 const { token } = require('morgan');
 
 const { sendSMS } = require('../util/message');
 
 module.exports = {
 
+  chat:async(req,res)=>{
+    const { senderId, receiverId } = req.params;
+
+    try {
+        const chats = await Chat.findAll({
+            where: {
+                senderId,
+                receiverId,
+            },
+            order: [['timestamp', 'ASC']], // Order by timestamp
+        });
+
+        res.json(chats);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+  },
+  postchat:async(req,res)=>{
+    const { senderId, receiverId, message } = req.body;
+
+    try {
+        const newChat = await Chat.create({
+            senderId,
+            receiverId,
+            message,
+        });
+
+        res.status(201).json(newChat);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+  },
   dashboard: async (req, res) => {
     try {
       const userid = req.user.userId
-      const subscription = await User.findOne({attributes:['subscription'], where :{ user_id : userid,}})
+      const subscription = await User.findOne({attributes:['subscription','blood_group'], where :{ user_id : userid,}})
       const totalMembers = await Patient.count({where:{user_id:userid,status:"Active"}});
       const upcomingAppointments = await Appointment.findAll({
         attributes: ['appointment_id', 'date', 'time', 'status'],
@@ -57,22 +90,22 @@ module.exports = {
             user.image = req.file.filename;
         }
         if (req.body.first_name) {
-            user.first_name = req.body.first_name;
+            user.name = req.body.first_name;
         }
-        if (req.body.last_name) {
+        if (req.body.last_name!='') {
             user.last_name = req.body.last_name;
         }
-        if (req.body.dob) {
+        if (req.body.dob!='') {
             user.date_of_birth = req.body.dob;
         }
-        if (req.body.gender) {
+        if (req.body.gender!='') {
             user.gender = req.body.gender;
         }
-        if (req.body.blood_group) {
-            user.blood_group = req.body.blood_group;
+        if (req.body.bg!='') {
+            user.blood_group = req.body.bg;
         }
         await user.save();
-        return res.status(200).json({success:"success", user });
+        return res.status(200).json({success:"success"});
   },
   prescription: async (req, res) => {
     const appointmentid = req.params.id;

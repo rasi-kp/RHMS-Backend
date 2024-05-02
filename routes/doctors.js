@@ -1,11 +1,12 @@
 var express = require('express');
 var router = express.Router();
 const isAuthdoctor =require('../middleware/isAuthDoctor')
-const {login,addtoken,addedtokens,appointments,
+const {login,addtoken,addedtokens,appointments,allpatient,
     absent,accept,notify,cappointment,addprescription}=require('../controllers/doctorcontroller')
 
 // router.post('/signup',signup)
 router.post('/login',login)
+router.get('/allpatient',isAuthdoctor,allpatient)
 router.post('/addtoken',isAuthdoctor,addtoken)
 router.get('/viewtokens/:date',isAuthdoctor,addedtokens)
 router.get('/appointment',isAuthdoctor,appointments)
