@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const OTP=require('./otp')
 
 sequelize.options.logging = false;
 

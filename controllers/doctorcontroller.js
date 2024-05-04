@@ -8,11 +8,28 @@ const Doctor = require('../model/doctor')
 const Patient = require('../model/patients')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment')
-const Prescription = require('../model/prescription')
+const Prescription = require('../model/prescription');
+const Chat = require('../model/chats');
 
 
 
 module.exports = {
+  messages:async(req,res)=>{
+    const doctorid = req.doctor.doctorId
+    let userId=req.params.id
+    // const doctor = await Doctor.findOne({ where: { doctor_id: doctorId } ,attributes:['image','first_name','last_name']});
+    const chats = await Chat.findAll({
+      attributes:['senderId','receiverId','message'],
+      where: {
+          [Sequelize.Op.or]: [
+              { senderId: doctorid, receiverId: userId },
+              { senderId: userId, receiverId: doctorid }
+          ]
+      },
+      order: [['createdAt', 'ASC']], // Optional: Order by creation date (ascending)
+  });
+    return res.status(200).json({chats})
+  },
   allpatient: async (req, res) => {
     const doctorid = req.doctor.doctorId
     const page = parseInt(req.query.page) || 1;
@@ -137,7 +154,7 @@ module.exports = {
           return res.status(401).json({ error: "Invalid password" });
         }
         const token = jwt.sign({ AdminID: admin.admin_id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '30d' });
-        return res.status(200).json({ token, role: "admin", user: { id: admin.id, email: admin.email, name: "Admin" } });
+        return res.status(200).json({ token, role: "admin", user: { id: admin.admin_id, email: admin.email, name: "Admin" } });
       }
       const doctor = await Doctor.findOne({
         where: { [Op.or]: [{ email: email }, { mob_no: email }] }

@@ -8,7 +8,6 @@ const Prescription = require('../model/prescription')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment');
 const Chat=require('../model/chats')
-const { token } = require('morgan');
 
 const { sendSMS } = require('../util/message');
 
@@ -74,6 +73,22 @@ module.exports = {
       console.log(error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
+  },
+  doctordetails:async(req,res)=>{
+    const userid = req.user.userId
+    let doctorId=req.params.id
+    const doctor = await Doctor.findOne({ where: { doctor_id: doctorId } ,attributes:['image','first_name','last_name']});
+    const chats = await Chat.findAll({
+      attributes:['senderId','receiverId','message'],
+      where: {
+          [Sequelize.Op.or]: [
+              { senderId: userid, receiverId: doctorId },
+              { senderId: doctorId, receiverId: userid }
+          ]
+      },
+      order: [['createdAt', 'ASC']], // Optional: Order by creation date (ascending)
+  });
+    return res.status(200).json({doctor,chats})
   },
   profile :async(req,res)=>{
     const userid = req.user.userId

@@ -1,23 +1,16 @@
 const { DataTypes, Sequelize } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('../model/user'); // Import the User model (assuming it includes both doctors and patients)
+const User = require('../model/user');
+const Doctor = require('../model/doctor');
 
-const Chat = sequelize.define('Chat', {
+const Chat = sequelize.define('Chats', {
     senderId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-            model: User, // Specify the User model for reference
-            key: 'id',
-        },
     },
     receiverId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-            model: User, // Specify the User model for reference
-            key: 'id',
-        },
     },
     message: {
         type: DataTypes.STRING,
@@ -27,13 +20,24 @@ const Chat = sequelize.define('Chat', {
         type: DataTypes.DATE,
         defaultValue: Sequelize.NOW,
     },
-}, {
-    tableName: 'chats', // Specify the table name
-    timestamps: false, // Disable Sequelize's automatic timestamp fields if not needed
 });
 
-// Define associations
-Chat.belongsTo(User, { as: 'Sender', foreignKey: 'senderId' });
-Chat.belongsTo(User, { as: 'Receiver', foreignKey: 'receiverId' });
+// Define associations with Users and Doctors
+// Sender can be a Doctor or a User (Patient)
+Chat.belongsTo(User, { as: 'SenderUser', foreignKey: 'senderId', constraints: false });
+Chat.belongsTo(Doctor, { as: 'SenderDoctor', foreignKey: 'senderId', constraints: false });
+
+// Receiver can be a Doctor or a User (Patient)
+Chat.belongsTo(User, { as: 'ReceiverUser', foreignKey: 'receiverId', constraints: false });
+Chat.belongsTo(Doctor, { as: 'ReceiverDoctor', foreignKey: 'receiverId', constraints: false });
+
+(async () => {
+    try {
+        await Chat.sync({ alter: true });
+        console.log('Chat table updated!');
+    } catch (error) {
+        console.error('Error syncing Chat table:', error);
+    }
+})();
 
 module.exports = Chat;

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const file=require('../config/multeruser')
 const isAuth=require('../middleware/isAuth')
-const {dashboard,allp,addp,deletep,editp,editpost,addappointment,
+const {dashboard,allp,addp,deletep,editp,editpost,addappointment,doctordetails,
     alldoctor,alltoken,appointments,cappointment,dappointment,rappointment,
     viewmonitor,prescription,profile,profileadd,chat,postchat} = require('../controllers/patientcontroller');
 
@@ -26,5 +26,6 @@ router.get('/viewmonitor',isAuth,viewmonitor)
 router.get('/prescription/:id',isAuth,prescription)
 router.get('/chat/:senderId/:receiverId',isAuth, chat);
 router.post('/chat',isAuth,postchat) 
+router.get('/doctor/:id',isAuth,doctordetails)
 
 module.exports = router;
