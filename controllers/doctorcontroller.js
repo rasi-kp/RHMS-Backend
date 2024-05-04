@@ -14,10 +14,15 @@ const Chat = require('../model/chats');
 
 
 module.exports = {
+  getuserid:async(req,res)=>{
+    const patientid=req.params.id
+    const user=await Patient.findOne({attributes:['user_id'],where:{patient_id:patientid}})
+    res.status(200).json({user})
+  },
   messages:async(req,res)=>{
     const doctorid = req.doctor.doctorId
     let userId=req.params.id
-    // const doctor = await Doctor.findOne({ where: { doctor_id: doctorId } ,attributes:['image','first_name','last_name']});
+    const user = await User.findOne({ where: { user_id: userId } ,attributes:['image','name','last_name']});
     const chats = await Chat.findAll({
       attributes:['senderId','receiverId','message'],
       where: {
@@ -28,7 +33,7 @@ module.exports = {
       },
       order: [['createdAt', 'ASC']], // Optional: Order by creation date (ascending)
   });
-    return res.status(200).json({chats})
+    return res.status(200).json({chats,user})
   },
   allpatient: async (req, res) => {
     const doctorid = req.doctor.doctorId

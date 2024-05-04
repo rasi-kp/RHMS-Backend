@@ -3,7 +3,8 @@ var router = express.Router();
 const isAuthdoctor =require('../middleware/isAuthDoctor')
 const {login,addtoken,addedtokens,appointments,allpatient,
     absent,accept,notify,cappointment,addprescription,
-    messages}=require('../controllers/doctorcontroller')
+    messages,
+    getuserid}=require('../controllers/doctorcontroller')
 
 // router.post('/signup',signup)
 router.post('/login',login)
@@ -17,6 +18,7 @@ router.get('/accept/:id',isAuthdoctor,accept)
 router.get('/notify/:id',isAuthdoctor,notify)
 router.post('/addprescription',isAuthdoctor,addprescription)
 router.get('/patient/:id',isAuthdoctor,messages)
+router.get('/getuserid/:id',isAuthdoctor,getuserid)
 
 
 
