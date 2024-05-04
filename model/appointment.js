@@ -65,6 +65,10 @@ Appointment.belongsTo(Doctor,{
   foreignKey:"doctor_id",
   as: "doctor"
 });
+Patient.hasMany(Appointment, {
+  foreignKey: 'patient_id', // Use your actual foreign key
+});
+
 // Sync the model with the database
 (async () => {
   try {

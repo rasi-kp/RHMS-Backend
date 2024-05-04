@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const OTP=require('./otp')
 
 sequelize.options.logging = false;
 
@@ -13,6 +12,9 @@ const Users = sequelize.define('Users', {
   name: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  last_name: {
+    type: DataTypes.STRING,
   },
   email: {
     type: DataTypes.STRING,
@@ -46,6 +48,22 @@ const Users = sequelize.define('Users', {
     type: DataTypes.BOOLEAN,
     defaultValue: false // Column to indicate whether the email is verified
   },
+  address: {
+    type: DataTypes.STRING,
+  },
+  blood_group: {
+    type: DataTypes.STRING,
+  },
+  gender: {
+    type: DataTypes.STRING,
+  },
+  date_of_birth: {
+    type: DataTypes.STRING,
+  },
+  image: {
+    type: DataTypes.STRING,
+  },
+  
 });
 
 

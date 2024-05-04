@@ -1,23 +1,92 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
 const { Op } = require('sequelize');
-
+const Sequelize = require('sequelize');
 const User = require('../model/user')
 const Admin = require('../model/admin')
 const Doctor = require('../model/doctor')
 const Patient = require('../model/patients')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment')
-const Prescription = require('../model/prescription')
+const Prescription = require('../model/prescription');
+const Chat = require('../model/chats');
 
 
 
 module.exports = {
+  getuserid:async(req,res)=>{
+    const patientid=req.params.id
+    const user=await Patient.findOne({attributes:['user_id'],where:{patient_id:patientid}})
+    res.status(200).json({user})
+  },
+  messages:async(req,res)=>{
+    const doctorid = req.doctor.doctorId
+    let userId=req.params.id
+    const user = await User.findOne({ where: { user_id: userId } ,attributes:['image','name','last_name']});
+    const chats = await Chat.findAll({
+      attributes:['senderId','receiverId','message'],
+      where: {
+          [Sequelize.Op.or]: [
+              { senderId: doctorid, receiverId: userId },
+              { senderId: userId, receiverId: doctorid }
+          ]
+      },
+      order: [['createdAt', 'ASC']], // Optional: Order by creation date (ascending)
+  });
+    return res.status(200).json({chats,user})
+  },
+  allpatient: async (req, res) => {
+    const doctorid = req.doctor.doctorId
+    const page = parseInt(req.query.page) || 1;
+    const search = req.query.search;
+    const whereCondition = {
+      doctor_id: doctorid,
+      status: 'completed',
+    };
+    if (search) {
+      whereCondition[Sequelize.Op.and] = [
+        whereCondition[Sequelize.Op.and] || {},
+        Sequelize.literal(`"patient"."first_name" ILIKE '%${search}%' OR "patient"."last_name" ILIKE '%${search}%'`)
+      ];
+    }
+    const patients = await Appointment.findAll({
+      attributes: ['appointment_id'],
+      where: whereCondition,
+      include: [
+        {
+          model: Patient,
+          as: 'patient',
+          attributes: ['patient_id', 'first_name','blood_group','height','weight', 'last_name', 'age', 'gender'],
+          required: true,
+        },
+      ],
+      group: ['patient.patient_id', 'Appointment.appointment_id'],
+    });
+    const uniquePatientsSet = new Set();
+    const uniquePatients = patients.reduce((acc, appointment) => {
+      const { patient } = appointment;
+      if (!uniquePatientsSet.has(patient.patient_id)) {
+        uniquePatientsSet.add(patient.patient_id);
+        acc.push(patient);
+      }
+      return acc;
+    }, []);
+    const totalPages = Math.ceil(uniquePatients.length / 5);
+    const startIndex = (page - 1) * 5;
+    const endIndex = page * 5;
+    const paginatedPatients = uniquePatients.slice(startIndex, endIndex);
+    return res.status(200).json({
+      page: page,
+      limit: 5,
+      totalPages: totalPages,
+      data: paginatedPatients
+    });
+  },
   accept: async (req, res) => {
     const doctorid = req.doctor.doctorId
     const appointmentid = req.params.id
     const detials = await Appointment.findOne({
-      attributes: ['appointment_id','token_id'],
+      attributes: ['appointment_id', 'token_id'],
       where: { appointment_id: appointmentid },
       include: [
         {
@@ -27,9 +96,9 @@ module.exports = {
         },
       ],
     })
-    await AvailableToken.update({ status: 'checking' },{ where: { token_id: detials.token_id } });
+    await AvailableToken.update({ status: 'checking' }, { where: { token_id: detials.token_id } });
     const prescription = await Prescription.findAll({
-      attributes: ['prescription_id', 'observation', 'tablets', 'test','createdAt'],
+      attributes: ['prescription_id', 'observation', 'tablets', 'test', 'createdAt'],
       where: { patient_id: detials.patient.patient_id, doctor_id: doctorid },
       order: [['createdAt', 'DESC']],
     })
@@ -53,7 +122,7 @@ module.exports = {
         test,
       });
       await Appointment.update({ status: 'completed' }, { where: { appointment_id: appointmentid } })
-      await AvailableToken.update({ status: 'completed' },{ where: { token_id: appointment.token_id } });
+      await AvailableToken.update({ status: 'completed' }, { where: { token_id: appointment.token_id } });
       res.status(201).json({
         message: 'Prescription added successfully',
         prescription: newPrescription,
@@ -90,7 +159,7 @@ module.exports = {
           return res.status(401).json({ error: "Invalid password" });
         }
         const token = jwt.sign({ AdminID: admin.admin_id }, process.env.ADMIN_JWT_SECRET, { expiresIn: '30d' });
-        return res.status(200).json({ token, role: "admin", user: { id: admin.id, email: admin.email, name: "Admin" } });
+        return res.status(200).json({ token, role: "admin", user: { id: admin.admin_id, email: admin.email, name: "Admin" } });
       }
       const doctor = await Doctor.findOne({
         where: { [Op.or]: [{ email: email }, { mob_no: email }] }
@@ -107,7 +176,7 @@ module.exports = {
         return res.status(401).json({ error: "Invalid password" });
       }
       const token = jwt.sign({ doctorId: doctor.doctor_id }, process.env.DOCTOR_JWT_SECRET, { expiresIn: '30d' });
-      return res.status(200).json({ token, role: "doctor", user: { id: doctor.doctor_id, email: doctor.email, name: doctor.first_name, last: doctor.last_name ,img:doctor.image} });
+      return res.status(200).json({ token, role: "doctor", user: { id: doctor.doctor_id, email: doctor.email, name: doctor.first_name, last: doctor.last_name, img: doctor.image } });
     } catch (error) {
       console.error('Error logging in:', error);
       return res.status(500).json({ error: "Internal Server Error" });
@@ -178,7 +247,7 @@ module.exports = {
 
     const whereCondition = {
       doctor_id: doctorid,
-      status: ['scheduled','pending']
+      status: ['scheduled', 'pending']
     };
     if (date) {
       whereCondition.date = date;

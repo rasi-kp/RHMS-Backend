@@ -106,7 +106,7 @@ module.exports = {
           return res.status(401).json({ error: "Invalid password" });
         }
         const token = jwt.sign({ userId: user.user_id ,email:user.email}, process.env.JWT_SECRET, { expiresIn: '30d' });
-        return res.status(200).json({ token, role:"patient", user: { id: user.id, email: user.email, name: user.name } });
+        return res.status(200).json({ token, role:"patient", user: { id: user.user_id, email: user.email, name: user.name,lname:user.last_name,image:user.image} });
       } catch (error) {
         console.error('Error logging in:', error);
         return res.status(500).json({ error: "Internal Server Error" });
@@ -130,7 +130,7 @@ module.exports = {
       userId: user.user_id
     });
     await uhelper.sendOTPEmail(email, generatedotp);
-    return res.status(200).json({ message: "OTP sent successfully" });
+    return res.status(200).json({ message: "OTP sent successfully" ,userid: user.user_id});
   },
   forgottenv:async(req,res)=>{
     try {

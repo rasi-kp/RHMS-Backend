@@ -10,5 +10,6 @@ router.post('/forgotten',forgotten)
 router.post('/forgottenverify',forgottenv)
 router.get('/doctors',doctors)
 router.get('/viewtoken',viewtoken)
+ // route for chat between users
 
 module.exports = router;
