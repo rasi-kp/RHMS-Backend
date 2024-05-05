@@ -19,6 +19,39 @@ module.exports = {
     const user=await Patient.findOne({attributes:['user_id'],where:{patient_id:patientid}})
     res.status(200).json({user})
   },
+  allchat: async (req, res) => {
+    const senderId = req.doctor.doctorId
+    try {
+      const chats = await Chat.findAll({
+        attributes: ['senderId', 'receiverId', 'message', 'timestamp'],
+        where: {
+          senderId,
+        },
+        include: [
+          {
+            model: User,
+            as: 'ReceiverUser',
+            attributes: ['name', 'last_name', 'image','user_id']
+          }
+        ],
+        order: [['timestamp', 'DESC']], // Order by timestamp
+      });
+      const seenDoctors = new Map();
+      const uniqueChats = chats.filter(chat => {
+        const userId = chat.ReceiverUser.user_id;
+        if (seenDoctors.has(userId)) {
+          return false; // Skip this entry as it's a duplicate
+        } else {
+          seenDoctors.set(userId, chat);
+          return true;
+        }
+      });
+      res.status(200).json({ uniqueChats });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: error.message });
+    }
+  },
   messages:async(req,res)=>{
     const doctorid = req.doctor.doctorId
     let userId=req.params.id

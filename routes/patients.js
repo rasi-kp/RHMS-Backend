@@ -5,7 +5,7 @@ const file=require('../config/multeruser')
 const isAuth=require('../middleware/isAuth')
 const {dashboard,allp,addp,deletep,editp,editpost,addappointment,doctordetails,
     alldoctor,alltoken,appointments,cappointment,dappointment,rappointment,
-    viewmonitor,prescription,profile,profileadd,chat,postchat} = require('../controllers/patientcontroller');
+    viewmonitor,prescription,profile,profileadd,chat,postchat,allchat} = require('../controllers/patientcontroller');
 
 router.get('/dashboard',isAuth,dashboard)
 router.get('/profile',isAuth,profile)
@@ -24,8 +24,9 @@ router.get('/deleteappointment/:id',isAuth,dappointment)
 router.get('/rescheduleappointment',isAuth,rappointment)
 router.get('/viewmonitor',isAuth,viewmonitor)
 router.get('/prescription/:id',isAuth,prescription)
-router.get('/chat/:senderId/:receiverId',isAuth, chat);
-router.post('/chat',isAuth,postchat) 
+// router.get('/chat/:senderId/:receiverId',isAuth, chat);
+router.post('/chat',isAuth,postchat)
+router.get('/allchats',isAuth,allchat) 
 router.get('/doctor/:id',isAuth,doctordetails)
 
 module.exports = router;

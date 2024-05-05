@@ -7,58 +7,87 @@ const User = require('../model/user')
 const Prescription = require('../model/prescription')
 const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment');
-const Chat=require('../model/chats')
+const Chat = require('../model/chats')
 
 const { sendSMS } = require('../util/message');
 
 module.exports = {
 
-  chat:async(req,res)=>{
+  chat: async (req, res) => {
     const { senderId, receiverId } = req.params;
-
     try {
-        const chats = await Chat.findAll({
-            where: {
-                senderId,
-                receiverId,
-            },
-            order: [['timestamp', 'ASC']], // Order by timestamp
-        });
-
-        res.json(chats);
+      const chats = await Chat.findAll({
+        where: {
+          senderId,
+          receiverId,
+        },
+        order: [['timestamp', 'ASC']], // Order by timestamp
+      });
+      res.json(chats);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message });
     }
   },
-  postchat:async(req,res)=>{
-    const { senderId, receiverId, message } = req.body;
-
+  allchat: async (req, res) => {
+    const senderId = req.user.userId
     try {
-        const newChat = await Chat.create({
-            senderId,
-            receiverId,
-            message,
-        });
-
-        res.status(201).json(newChat);
+      const chats = await Chat.findAll({
+        attributes: ['senderId', 'receiverId', 'message', 'timestamp'],
+        where: {
+          senderId,
+        },
+        include: [
+          {
+            model: Doctor,
+            as: 'ReceiverDoctor',
+            attributes: ['first_name', 'last_name', 'image','doctor_id']
+          }
+        ],
+        order: [['timestamp', 'DESC']], // Order by timestamp
+      });
+      const seenDoctors = new Map();
+      const uniqueChats = chats.filter(chat => {
+        const doctorId = chat.ReceiverDoctor.doctor_id;
+        if (seenDoctors.has(doctorId)) {
+          return false; // Skip this entry as it's a duplicate
+        } else {
+          seenDoctors.set(doctorId, chat);
+          return true;
+        }
+      });
+      res.status(200).json({ uniqueChats });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+      console.log(error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+  postchat: async (req, res) => {
+    const { senderId, receiverId, message } = req.body;
+    try {
+      const newChat = await Chat.create({
+        senderId,
+        receiverId,
+        message,
+      });
+      res.status(201).json(newChat);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
   },
   dashboard: async (req, res) => {
     try {
       const userid = req.user.userId
-      const subscription = await User.findOne({attributes:['subscription','blood_group'], where :{ user_id : userid,}})
-      const totalMembers = await Patient.count({where:{user_id:userid,status:"Active"}});
+      const subscription = await User.findOne({ attributes: ['subscription', 'blood_group'], where: { user_id: userid, } })
+      const totalMembers = await Patient.count({ where: { user_id: userid, status: "Active" } });
       const upcomingAppointments = await Appointment.findAll({
         attributes: ['appointment_id', 'date', 'time', 'status'],
-        where: {user_id: userid, status: ['scheduled']},
+        where: { user_id: userid, status: ['scheduled'] },
         order: [['date', 'DESC']],
         include: [
           {
             model: Patient,
             as: 'patient',
-            attributes: ['first_name', 'last_name','gender'],
+            attributes: ['first_name', 'last_name', 'gender'],
           },
           {
             model: Doctor,
@@ -67,60 +96,60 @@ module.exports = {
           }
         ]
       })
-      const appointmentcount = await Appointment.count({where:{user_id:userid,status:['scheduled','completed']}});
-      return res.status(200).json({upcomingAppointments,subscription,totalMembers,appointmentcount});
+      const appointmentcount = await Appointment.count({ where: { user_id: userid, status: ['scheduled', 'completed'] } });
+      return res.status(200).json({ upcomingAppointments, subscription, totalMembers, appointmentcount });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: "Internal Server Error" });
     }
   },
-  doctordetails:async(req,res)=>{
+  doctordetails: async (req, res) => {
     const userid = req.user.userId
-    let doctorId=req.params.id
-    const doctor = await Doctor.findOne({ where: { doctor_id: doctorId } ,attributes:['image','first_name','last_name']});
+    let doctorId = req.params.id
+    const doctor = await Doctor.findOne({ where: { doctor_id: doctorId }, attributes: ['image', 'first_name', 'last_name'] });
     const chats = await Chat.findAll({
-      attributes:['senderId','receiverId','message'],
+      attributes: ['senderId', 'receiverId', 'message','timestamp'],
       where: {
-          [Sequelize.Op.or]: [
-              { senderId: userid, receiverId: doctorId },
-              { senderId: doctorId, receiverId: userid }
-          ]
+        [Sequelize.Op.or]: [
+          { senderId: userid, receiverId: doctorId },
+          { senderId: doctorId, receiverId: userid }
+        ]
       },
       order: [['createdAt', 'ASC']], // Optional: Order by creation date (ascending)
-  });
-    return res.status(200).json({doctor,chats})
+    });
+    return res.status(200).json({ doctor, chats })
   },
-  profile :async(req,res)=>{
+  profile: async (req, res) => {
     const userid = req.user.userId
-    const data=await User.findOne({where:{user_id:userid}})
-    return res.status(200).json({data})
+    const data = await User.findOne({ where: { user_id: userid } })
+    return res.status(200).json({ data })
   },
-  profileadd :async(req,res)=>{
+  profileadd: async (req, res) => {
     const userId = req.user.userId;
-        const user = await User.findOne({ where: { user_id: userId } });
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        if (req.file) {
-            user.image = req.file.filename;
-        }
-        if (req.body.first_name) {
-            user.name = req.body.first_name;
-        }
-        if (req.body.last_name!='') {
-            user.last_name = req.body.last_name;
-        }
-        if (req.body.dob!='') {
-            user.date_of_birth = req.body.dob;
-        }
-        if (req.body.gender!='') {
-            user.gender = req.body.gender;
-        }
-        if (req.body.bg!='') {
-            user.blood_group = req.body.bg;
-        }
-        await user.save();
-        return res.status(200).json({success:"success"});
+    const user = await User.findOne({ where: { user_id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (req.file) {
+      user.image = req.file.filename;
+    }
+    if (req.body.first_name) {
+      user.name = req.body.first_name;
+    }
+    if (req.body.last_name != '') {
+      user.last_name = req.body.last_name;
+    }
+    if (req.body.dob != '') {
+      user.date_of_birth = req.body.dob;
+    }
+    if (req.body.gender != '') {
+      user.gender = req.body.gender;
+    }
+    if (req.body.bg != '') {
+      user.blood_group = req.body.bg;
+    }
+    await user.save();
+    return res.status(200).json({ success: "success" });
   },
   prescription: async (req, res) => {
     const appointmentid = req.params.id;
@@ -411,7 +440,7 @@ module.exports = {
     }
     const bookedAppointments = await Appointment.findAll({
       attributes: ['appointment_id', 'date', 'time', 'status'],
-      where:whereCondition,
+      where: whereCondition,
       order: [['date', 'DESC']],
       include: [
         {
