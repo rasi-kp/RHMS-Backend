@@ -17,7 +17,7 @@ module.exports = {
         },
     });
     const mailOptions = {
-        from: 'rasir239@gmail.com',
+        from: 'rhmsonline@gmail.com',
         to: email,
         subject: 'OTP for Sign-up RHMS',
         text: `Your OTP for sign-up is: ${otp}`,

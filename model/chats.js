@@ -21,8 +21,6 @@ const Chat = sequelize.define('Chats', {
         defaultValue: Sequelize.NOW,
     },
 });
-
-// Define associations with Users and Doctors
 // Sender can be a Doctor or a User (Patient)
 Chat.belongsTo(User, { as: 'SenderUser', foreignKey: 'senderId', constraints: false });
 Chat.belongsTo(Doctor, { as: 'SenderDoctor', foreignKey: 'senderId', constraints: false });

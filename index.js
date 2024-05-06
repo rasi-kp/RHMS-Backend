@@ -52,28 +52,28 @@ io.on('connection', (socket) => {
     // console.log(`Socket ${socket.id} joined room for senderId ${senderId} and receiverId ${receiverId}`);
     userSocketMap.set(senderId, socket);
     const receiverSocket = userSocketMap.get(receiverId);
-    if(receiverSocket){
-      io.emit('user_status', { status: 'online' });
+    if (receiverSocket) {
+      io.to(receiverSocket.id).emit('user_status', { userId: senderId, status: 'online' });
     }
   });
   socket.on('message', async (data) => {
     const { senderId, receiverId, message } = data;
     const newChat = await Chat.create({
-        senderId,
-        receiverId,
-        message,
-        timestamp: new Date(),
+      senderId,
+      receiverId,
+      message,
+      timestamp: new Date(),
     });
     const receiverSocket = userSocketMap.get(receiverId);
     if (receiverSocket) {
-        receiverSocket.emit('receive_message', newChat);
+      receiverSocket.emit('receive_message', newChat);
     }
   });
   socket.on('typing', (data) => {
     const { senderId, receiverId } = data;
     const receiverSocket = userSocketMap.get(receiverId);
     if (receiverSocket) {
-        receiverSocket.emit('user_typing', { senderId });
+      receiverSocket.emit('user_typing', { senderId });
     }
   });
   socket.on('disconnect', () => {
