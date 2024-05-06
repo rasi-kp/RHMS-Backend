@@ -207,6 +207,20 @@ module.exports = {
       data: paginatedPatients
     });
   },
+  alldoctorchat: async (req, res) => {
+    const search = req.query.search;
+    const whereCondition = {};
+    if (search) {
+      whereCondition[Sequelize.Op.or] = {
+        first_name: { [Sequelize.Op.iLike]: `%${search}%` },
+      };
+    }
+    const doctor = await Doctor.findAll({
+      attributes: ['doctor_id', 'first_name', 'last_name','image'],
+      where: whereCondition, order: [['createdAt', 'DESC']]
+    });
+    return res.status(200).json({doctor});
+  },
   alldoctor: async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const search = req.query.search;
