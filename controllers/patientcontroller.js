@@ -290,6 +290,7 @@ module.exports = {
   },
   addp: async (req, res) => {
     const userid = req.user.userId
+    // console.log(req.body)
     try {
       const { fname, lname, dob, bg, age, weight, height, gender } = req.body;
       const [day, month, year] = dob.split('/');
