@@ -25,7 +25,7 @@ module.exports = {
       const chats = await Chat.findAll({
         attributes: ['senderId', 'receiverId', 'message', 'timestamp'],
         where: {
-          senderId,
+          senderId
         },
         include: [
           {
@@ -38,7 +38,7 @@ module.exports = {
       });
       const seenDoctors = new Map();
       const uniqueChats = chats.filter(chat => {
-        const userId = chat.ReceiverUser.user_id;
+        const userId = chat.ReceiverUser?.user_id;
         if (seenDoctors.has(userId)) {
           return false; // Skip this entry as it's a duplicate
         } else {
