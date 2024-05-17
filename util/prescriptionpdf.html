@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header, .footer {
+            background-color: #e2e8f0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .header img {
+            width: 100px;
+        }
+        .header div, .footer div {
+            display: inline-block;
+            vertical-align: top;
+            width: calc(100% - 120px);
+        }
+        .header div p, .footer div p {
+            margin: 0;
+            padding: 0;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .content h1 {
+            text-decoration: underline;
+        }
+        .content .doctor-details, .content .patient-details, .content .prescriptions {
+            margin: 20px 0;
+        }
+        .prescriptions p {
+            margin: 5px 0;
+        }
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="../public/images/logo.png" alt="Logo">
+            <div>
+                <p>Email: rasir239@gmail.com</p>
+                <p>Phone: 9605942261</p>
+                <p>Website: rhms.online</p>
+            </div>
+        </div>
+        <div class="content">
+            <h1>Doctor Details</h1>
+            <div class="doctor-details">
+                <img src="doctor_image_url" alt="Doctor Image" style="width: 100px;">
+                <div>
+                    <p><strong>Doctor Name:</strong> {{doctorName}}</p>
+                    <p><strong>Specialization:</strong> {{specialization}}</p>
+                    <p><strong>Qualification:</strong> {{qualification}}</p>
+                </div>
+            </div>
+            <h1>Patient Details</h1>
+            <div class="patient-details">
+                <p><strong>Name:</strong> {{patientName}}</p>
+                <p><strong>Age:</strong> {{age}}</p>
+                <p><strong>Gender:</strong> {{gender}}</p>
+            </div>
+            <h1>Prescriptions</h1>
+            <div class="prescriptions">
+                {{#each prescriptions}}
+                <p><strong>{{@index + 1}}.</strong> {{this.name}} - {{this.dosage}} mg, Time: {{this.time}}</p>
+                {{/each}}
+            </div>
+        </div>
+        <div class="footer text-center">
+            <p>Thank you for choosing RHMS.</p>
+        </div>
+    </div>
+</body>
+</html>
