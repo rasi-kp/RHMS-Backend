@@ -10,6 +10,7 @@ const AvailableToken = require('../model/AvailableToken')
 const Appointment = require('../model/appointment')
 const Prescription = require('../model/prescription');
 const Chat = require('../model/chats');
+const { sendPrescription } = require('../util/sendprescription');
 
 
 
@@ -25,7 +26,7 @@ module.exports = {
       const chats = await Chat.findAll({
         attributes: ['senderId', 'receiverId', 'message', 'timestamp'],
         where: {
-          senderId,
+          senderId
         },
         include: [
           {
@@ -38,7 +39,7 @@ module.exports = {
       });
       const seenDoctors = new Map();
       const uniqueChats = chats.filter(chat => {
-        const userId = chat.ReceiverUser.user_id;
+        const userId = chat.ReceiverUser?.user_id;
         if (seenDoctors.has(userId)) {
           return false; // Skip this entry as it's a duplicate
         } else {
@@ -156,6 +157,7 @@ module.exports = {
       });
       await Appointment.update({ status: 'completed' }, { where: { appointment_id: appointmentid } })
       await AvailableToken.update({ status: 'completed' }, { where: { token_id: appointment.token_id } });
+      sendPrescription(doctorid,req.body)
       res.status(201).json({
         message: 'Prescription added successfully',
         prescription: newPrescription,
