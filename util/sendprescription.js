@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const PuppeteerHTMLPDF = require('puppeteer-html-pdf');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
@@ -11,15 +11,15 @@ const sendPrescription = async (doctorid, others) => {
     const { patientid, tablets } = others;
 
     try {
+        // Fetch doctor details
         const doctor = await Doctor.findOne({
             where: { doctor_id: doctorid },
             attributes: ['image', 'first_name', 'last_name', 'specialization', 'qualification']
         });
-        
         if (!doctor) {
             throw new Error('Doctor not found');
         }
-
+        // Fetch patient details along with user's email
         const patient = await Patient.findOne({
             where: { patient_id: patientid },
             attributes: ['first_name', 'last_name', 'age', 'gender'],
@@ -29,18 +29,21 @@ const sendPrescription = async (doctorid, others) => {
                 required: true
             }]
         });
-
         if (!patient) {
             throw new Error('Patient not found');
         }
-
         const patientDetails = patient.get({ plain: true });
 
         const templatePath = path.join(__dirname, 'prescriptionpdf.html');
         const templateSource = fs.readFileSync(templatePath, 'utf-8');
-        const template = handlebars.compile(templateSource);
+        const logo = fs.readFileSync('public/images/logo.png', 'base64');
+        const doctorimage = fs.readFileSync(`public/doctors/${doctor.image}`, 'base64');
+        const htmlWithStyles = `<style>${logo}${doctorimage}</style>${templateSource}`;
+        const template = handlebars.compile(htmlWithStyles);
 
         const html = template({
+            logo: logo,
+            image: doctorimage,
             doctorName: `${doctor.first_name} ${doctor.last_name}`,
             specialization: doctor.specialization,
             qualification: doctor.qualification,
@@ -49,13 +52,12 @@ const sendPrescription = async (doctorid, others) => {
             gender: patientDetails.gender,
             prescriptions: tablets
         });
-
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-        const pdfBuffer = await page.pdf({ format: 'A4' });
-        await browser.close();
-
+        // Create a PuppeteerHTMLPDF instance and set options
+        const htmlPDF = new PuppeteerHTMLPDF();
+        htmlPDF.setOptions({ format: 'A4' });
+        // Generate PDF buffer
+        const pdfBuffer = await htmlPDF.create(html);
+        // Configure nodemailer to send the email
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -77,7 +79,6 @@ const sendPrescription = async (doctorid, others) => {
                 }
             ]
         };
-
         await transporter.sendMail(mailOptions);
         console.log('Prescription sent successfully!');
     } catch (error) {

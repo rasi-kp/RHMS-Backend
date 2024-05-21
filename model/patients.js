@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database'); // Assuming you have a database connection setup
+const User=require('./user')
 
 const Patient = sequelize.define('Patient', {
   patient_id: {
@@ -45,7 +46,7 @@ const Patient = sequelize.define('Patient', {
     type: DataTypes.STRING
   }
 });
-
+Patient.belongsTo(User, { foreignKey: 'user_id' });
 // Sync the model with the database
 (async () => {
   try {
