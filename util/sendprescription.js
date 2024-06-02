@@ -65,7 +65,6 @@ const sendPrescription = async (doctorid, others) => {
                 pass: process.env.EMAIL_PASS,
             }
         });
-
         const mailOptions = {
             from: 'rhmsonline@gmail.com',
             to: patientDetails.User.email, // Correctly access the nested email attribute

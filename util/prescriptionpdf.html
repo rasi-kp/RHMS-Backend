@@ -90,7 +90,7 @@
             <h2>Prescriptions</h2>
             <div class="prescriptions">
                 {{#each prescriptions}}
-                <p><strong>{{@index}}.</strong> {{this.name}} - {{this.dosage}} mg, Time: {{this.time}}</p>
+                <p><strong>{{@index+1}}.</strong> {{this.name}} - {{this.dosage}} mg, Time: {{this.time}}</p>
                 {{/each}}
             </div>
         </div>
