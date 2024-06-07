@@ -30,14 +30,21 @@ app.use('/doctor', doctor);
 app.use('/admin', admin);
 
 // Start the server
+// SSL options
+const options = {
+  key: fs.readFileSync('/etc/ssl/private/nginx-selfsigned.key'),
+  cert: fs.readFileSync('/etc/ssl/certs/nginx-selfsigned.crt')
+};
+
+// Start the HTTPS server
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+const server = https.createServer(options, app).listen(PORT, () => {
+  console.log(`Server is running on https://localhost:${PORT}`);
 });
 
 const io = require('socket.io')(server, {
   cors: {
-    origin: "http://localhost:3001",
+    origin: "https://rhms.online",
     credentials: true,
   },
 });
