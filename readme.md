@@ -1,6 +1,6 @@
 # RHMS Hospital Management System Backend
 
-live in [rhms.online](#https://rhms.online/)
+project live in [rhms.online](https://rhms.online)
 
 Welcome to the RHMS (Hospital Management System) Backend repository. This repository contains the backend services for the RHMS project, developed using modern web technologies to manage various hospital operations efficiently.
 
